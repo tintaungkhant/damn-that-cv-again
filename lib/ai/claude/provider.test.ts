@@ -64,3 +64,31 @@ test("Claude profile tool validates a whole batch and emits it only after succes
   assert.deepEqual(events.map(event => event.type), ["proposal", "usage", "done"]);
   assert.deepEqual(events[0], { type: "proposal", kind: "profile", value });
 });
+
+test("Claude exposes the approved CV tool only for build chats and stages valid CVs", async () => {
+  const value = { schemaVersion: 1, sections: [{ type: "list", title: "Skills", items: [{ text: "TypeScript", evidence: ["p-work"] }] }] };
+  const provider = createClaudeProvider(input => ({
+    close() {},
+    async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
+      const server = input.options?.mcpServers?.profile;
+      assert.ok(server && "instance" in server);
+      assert.ok(input.options?.allowedTools?.includes("mcp__profile__propose_cv"));
+      const prompt = JSON.parse(String(input.prompt));
+      assert.equal(prompt.build.settings.projectLimit, 3);
+      const client = new Client({ name: "test", version: "1" });
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      await server.instance.connect(serverTransport); await client.connect(clientTransport);
+      try {
+        const tools = await client.listTools();
+        assert.ok(tools.tools.some(item => item.name === "propose_cv"));
+        const response = await client.callTool({ name: "propose_cv", arguments: value });
+        assert.notEqual(response.isError, true);
+      } finally { await client.close(); await server.instance.close(); }
+      yield { type: "result", subtype: "success", is_error: false, usage: { input_tokens: 1, output_tokens: 2 } } as SDKMessage;
+    },
+  }));
+  const events = [];
+  for await (const event of provider.stream({ ...request, build: { settings: { jobDescription: "Build services", targetRole: "", targetCompany: "", projectLimit: 3 }, draft: null, accepted: null } }, new AbortController().signal)) events.push(event);
+  assert.deepEqual(events[0], { type: "proposal", kind: "cv", value });
+  assert.equal(events.at(-1)?.type, "done");
+});

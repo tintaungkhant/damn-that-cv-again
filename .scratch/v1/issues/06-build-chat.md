@@ -27,3 +27,5 @@ Tailor a CV to a pasted job description.
 ## Comments
 
 2026-10-23: Storage slice adds schema v3, per-chat job settings, automatic draft persistence, accepted pointers, discard, restore-as-draft, profile snapshot references, and evidence checks. Tests cover migration, restart, stale actions, rollback, isolation, and deletion. Provider and UI work remain.
+
+2026-10-23: Provider/service slice enables `propose_cv` only in build requests, supplies saved job context and active/accepted CVs, buffers both proposal kinds, and commits them only on successful completion. Evidence is checked against the request snapshot. Server Actions validate job settings and revision mutations. Failure tests preserve accepted content and reject incomplete, duplicate, or unconfirmed claims. UI remains in progress.

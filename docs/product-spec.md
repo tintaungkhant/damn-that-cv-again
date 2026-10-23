@@ -129,7 +129,7 @@ Each user message makes one Agent SDK `query()` call:
 - A custom system prompt replaces the Claude Code default.
 - Built-in Claude Code tools are disabled.
 - Local Claude Code settings and `CLAUDE.md` files are not loaded.
-- Two in-process tools, `propose_profile_edit` and `propose_cv`, carry structured proposals. Their zod input schemas are the proposal and CV contracts. Ticket 04 enables only `propose_profile_edit`; `propose_cv` follows the approved CV schema in later tickets.
+- Two in-process tools, `propose_profile_edit` and `propose_cv`, carry structured proposals. Their zod input schemas are the proposal and CV contracts. Ticket 04 enables `propose_profile_edit`. Ticket 06 enables `propose_cv` with the approved CV schema only for build chats; successful completion saves a draft, and acceptance remains explicit.
 - Partial messages are enabled so text streams.
 
 ## Backup and restore

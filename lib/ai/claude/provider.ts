@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { profileProposal, type ProfileProposal } from "../../storage/profile.ts";
+import { cvSchema, type Cv } from "../../storage/cv.ts";
 import { createSdkMcpServer, tool, query, type Query } from "@anthropic-ai/claude-agent-sdk";
 import type { ChatEvent, ChatProvider } from "../provider.ts";
 
@@ -20,6 +21,7 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
       try {
         let proposal: ProfileProposal | undefined;
         let invalidProposal = false;
+        let cv: Cv | undefined;
         const propose = tool("propose_profile_edit", "Propose one batch of profile block operations for explicit user approval. Never saves the confirmed profile.", profileProposal.shape, async args => {
           const parsed = profileProposal.safeParse(args);
           if (!parsed.success || proposal || parsed.data.baseRevision !== (request.profileRevision ?? null)) {
@@ -29,7 +31,16 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
           proposal = parsed.data;
           return { content: [{ type: "text", text: "Proposal staged for review only. It is not approved or saved to the confirmed profile." }] };
         });
-        const mcp = createSdkMcpServer({ name: "profile", version: "1.0.0", tools: [propose] });
+        const proposeCv = tool("propose_cv", "Propose a complete version-1 CV as an automatically saved draft, never an accepted CV. Explain selection decisions and alternatives in normal reply text.", cvSchema.shape, async args => {
+          const parsed = cvSchema.safeParse(args);
+          if (!request.build || cv || !parsed.success) {
+            invalidProposal = true;
+            return { isError: true, content: [{ type: "text", text: "Invalid CV. Use one complete valid CV in a build chat." }] };
+          }
+          cv = parsed.data;
+          return { content: [{ type: "text", text: "CV staged as a draft for successful completion. The user must accept it separately. Include the selection explanation in your reply." }] };
+        });
+        const mcp = createSdkMcpServer({ name: "profile", version: "1.0.0", tools: request.build ? [propose, proposeCv] : [propose] });
         const env = { ...process.env };
         delete env.ANTHROPIC_API_KEY;
         delete env.ANTHROPIC_AUTH_TOKEN;
@@ -39,12 +50,12 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
         try {
           signal.throwIfAborted();
           session = run({
-            prompt: JSON.stringify({ confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], conversation: request.messages }),
+            prompt: JSON.stringify({ confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], ...(request.build ? { build: request.build } : {}), conversation: request.messages }),
             options: {
               systemPrompt: request.instructions,
               tools: [], settingSources: [], skills: [], title: "cv-chat",
-              strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: ["mcp__profile__propose_profile_edit"],
-              includePartialMessages: true, persistSession: false, maxTurns: 3,
+              strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: request.build ? ["mcp__profile__propose_profile_edit", "mcp__profile__propose_cv"] : ["mcp__profile__propose_profile_edit"],
+              includePartialMessages: true, persistSession: false, maxTurns: 4,
               cwd, env, abortController,
             },
           });
@@ -64,9 +75,10 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
                 yield errorEvent(JSON.stringify(message)); return;
               }
               if (invalidProposal) {
-                yield { type: "error", code: "validation", message: "Claude returned an invalid profile proposal. Your confirmed profile is unchanged; retry." }; return;
+                yield { type: "error", code: "validation", message: "Claude returned an invalid proposal. Saved profile and CVs are unchanged; retry." }; return;
               }
               if (proposal) yield { type: "proposal", kind: "profile", value: proposal };
+              if (cv) yield { type: "proposal", kind: "cv", value: cv };
               yield { type: "usage", inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens,
                 cacheReadTokens: message.usage.cache_read_input_tokens ?? 0, cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0 };
               yield { type: "done" };
