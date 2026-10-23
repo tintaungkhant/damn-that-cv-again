@@ -68,7 +68,7 @@ try {
   assert.equal(restored.restored, true);
   assert.equal(restored.workspace.revisions.length, 3);
   assert.equal(restored.workspace.revisions[0].markdown, initial.markdown);
-  const reopened = await fetch(`http://localhost:3801/?chat=${chat.id}`, { headers: { RSC: "1" } });
+  const reopened = await fetch(`http://localhost:3801/chats/${chat.id}`, { headers: { RSC: "1" } });
   assert.equal(reopened.status, 200);
   assert.doesNotMatch(await reopened.text(), /^[0-9a-f]+:E\{/m);
   assert.equal((await action("readChatMessages", [chat.id])).length, 4);

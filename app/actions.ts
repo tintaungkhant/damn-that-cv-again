@@ -15,8 +15,8 @@ export async function createChat(formData: FormData) {
   } catch {
     return { error: "Could not save your chat. Please try again." };
   }
-  revalidatePath("/");
-  redirect(`/?chat=${id}`);
+  revalidatePath("/", "layout");
+  redirect(`/chats/${id}`);
 }
 
 export async function deleteChat(formData: FormData) {
@@ -29,7 +29,7 @@ export async function deleteChat(formData: FormData) {
   } catch {
     return { error: "Could not delete the chat. Confirm build chat deletion or refresh and try again." };
   }
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   redirect("/");
 }
 

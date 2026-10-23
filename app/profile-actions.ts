@@ -14,13 +14,15 @@ export async function approveProfileEdit(input: unknown) {
   return { approved: result.approved, workspace: store.getProfileWorkspace(chatId) };
 }
 export async function restoreProfile(input: unknown) {
-  const { chatId, revisionId, expectedRevision } = z.object({ chatId: z.uuid(), revisionId: z.string().min(1), expectedRevision: z.string().min(1) }).strict().parse(input);
+  // chatId is null on the profile page, which has no chat proposals to return.
+  const { chatId, revisionId, expectedRevision } = z.object({ chatId: z.uuid().nullable(), revisionId: z.string().min(1), expectedRevision: z.string().min(1) }).strict().parse(input);
   const store = getStore();
-  if (!store.getChat(chatId)) throw new Error("Chat not found.");
+  if (chatId && !store.getChat(chatId)) throw new Error("Chat not found.");
+  const workspace = () => chatId ? store.getProfileWorkspace(chatId) : { revisions: store.getProfileRevisions(), proposals: [] };
   try {
     store.restoreProfileRevision(revisionId, expectedRevision);
-    return { restored: true, workspace: store.getProfileWorkspace(chatId) };
+    return { restored: true, workspace: workspace() };
   } catch {
-    return { restored: false, workspace: store.getProfileWorkspace(chatId) };
+    return { restored: false, workspace: workspace() };
   }
 }

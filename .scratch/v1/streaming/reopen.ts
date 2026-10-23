@@ -11,7 +11,7 @@ try {
   const chats = store.listChats().filter(chat => store.getMessages(chat.id).length > 0);
   assert.ok(chats.length > 0, "Need a saved conversation for the reload check.");
   for (const chat of chats) {
-    const response = await fetch(`http://localhost:3800/?chat=${chat.id}`, { headers: { RSC: "1" } });
+    const response = await fetch(`http://localhost:3800/chats/${chat.id}`, { headers: { RSC: "1" } });
     assert.equal(response.status, 200);
     const flight = await response.text();
     assert.ok(!/^[0-9a-f]+:E\{/m.test(flight), "Reopening a saved conversation must not return a React server error.");

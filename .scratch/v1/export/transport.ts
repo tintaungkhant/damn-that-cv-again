@@ -79,7 +79,7 @@ try {
   const discarded = await action("changeCvRevision", [{ chatId: chat.id, revisionId: restored.revisions[0].id, action: "discard", expectedAcceptedId: first.id }]);
   assert.equal(discarded.acceptedId, first.id);
   assert.equal(discarded.revisions[0].status, "discarded");
-  const reopened = await fetch(`http://localhost:3801/?chat=${chat.id}`, { headers: { RSC: "1" } });
+  const reopened = await fetch(`http://localhost:3801/chats/${chat.id}`, { headers: { RSC: "1" } });
   assert.equal(reopened.status, 200);
   assert.doesNotMatch(await reopened.text(), /^[0-9a-f]+:E{/m);
   assert.equal((await action("readChatMessages", [chat.id])).length, 2);
