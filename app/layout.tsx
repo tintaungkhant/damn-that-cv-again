@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Damn! TCVA",
+  title: "Damn! That CV Again",
   description: "Your career notes and tailored CV conversations.",
 };
 

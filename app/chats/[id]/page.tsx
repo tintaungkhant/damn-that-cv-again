@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 export async function generateMetadata({ params }: PageProps<"/chats/[id]">) {
   const parsed = z.uuid().safeParse((await params).id);
   const chat = parsed.success ? getStore().getChat(parsed.data) : undefined;
-  return { title: chat ? `${chat.title} · Damn! TCVA` : "Chat not found · Damn! TCVA" };
+  return { title: chat ? `${chat.title} · Damn! That CV Again` : "Chat not found · Damn! That CV Again" };
 }
 
 export default function ChatPage({ params }: PageProps<"/chats/[id]">) {
