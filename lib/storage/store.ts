@@ -5,6 +5,9 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { profileProposal, emptyProfile, applyProfileOperations, canReapply, parseProfile, type SavedProposal, type ProfileRevision } from "./profile.ts";
 
+import { buildSettings, defaultBuildSettings, cvRevisionAction, validateCvEvidence, type CvRevision } from "./build.ts";
+import { cvSchema } from "./cv.ts";
+
 export const chatInput = z.object({
   category: z.enum(["profile", "build"]),
   title: z.string().trim().min(1).max(120),
@@ -61,7 +64,7 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1 && version !== 2) {
+    } else if (version !== 1 && version !== 2 && version !== 3) {
       throw new Error("Database version is newer than this app supports.");
     }
     if (version === 0 || version === 1) {
@@ -82,6 +85,21 @@ export function openStore(path: string) {
           db.prepare("INSERT OR IGNORE INTO profile_block_ids(id) VALUES (?)").run(match[1]);
         }
       }
+    }
+    if (version === 0 || version === 1 || version === 2) {
+      db.exec(`
+        CREATE TABLE build_context (
+          chat_id TEXT PRIMARY KEY REFERENCES chats(id) ON DELETE CASCADE,
+          settings TEXT NOT NULL CHECK(json_valid(settings)),
+          version INTEGER NOT NULL DEFAULT 0,
+          accepted_revision TEXT REFERENCES cv_revisions(id) ON DELETE SET NULL
+        );
+        ALTER TABLE cv_revisions ADD COLUMN profile_revision TEXT;
+        ALTER TABLE cv_revisions ADD COLUMN explanation TEXT NOT NULL DEFAULT '';
+        PRAGMA user_version = 3;
+      `);
+      db.prepare("INSERT INTO build_context(chat_id, settings) SELECT id, ? FROM chats WHERE category = 'build'").run(JSON.stringify(defaultBuildSettings));
+      db.exec("UPDATE build_context SET accepted_revision = (SELECT id FROM cv_revisions WHERE chat_id = build_context.chat_id AND status = 'accepted' ORDER BY rowid DESC LIMIT 1)");
     }
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
@@ -139,7 +157,7 @@ export function openStore(path: string) {
     recoverInterruptedTurns() {
       db.prepare("UPDATE messages SET status = 'failed' WHERE status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").run(userId);
     },
-    completeTurn(id: string, content: string, proposal?: unknown) {
+    completeTurn(id: string, content: string, proposal?: unknown, cv?: { value: unknown; profileRevision: string }) {
       const text = z.string().trim().min(1).parse(content);
       db.exec("BEGIN IMMEDIATE");
       try {
@@ -156,12 +174,60 @@ export function openStore(path: string) {
           db.prepare("UPDATE profile_proposals SET status = 'superseded' WHERE chat_id = ? AND status = 'pending'").run(pending.chat_id);
           db.prepare("INSERT INTO profile_proposals(id, chat_id, message_id, value, status) VALUES (?, ?, ?, ?, 'pending')").run(randomUUID(), pending.chat_id, id, JSON.stringify(value));
         }
+        if (cv !== undefined) {
+          const workspace = this.getCvWorkspace(String(pending.chat_id));
+          if (!workspace.settings.jobDescription) throw new Error("Save a job description before generating a CV.");
+          const profile = this.getProfileRevisions().find(item => item.id === cv.profileRevision);
+          if (!profile) throw new Error("CV profile revision not found.");
+          const value = validateCvEvidence(cv.value, profile.markdown);
+          db.prepare("INSERT INTO cv_revisions(id, chat_id, content, status, profile_revision, explanation) VALUES (?, ?, ?, 'draft', ?, ?)").run(randomUUID(), pending.chat_id, JSON.stringify(value), profile.id, text);
+        }
         db.prepare("UPDATE messages SET status = 'complete' WHERE id = ?").run(id);
         db.exec("COMMIT");
       } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
     },
     getCvRevisions(id: string) {
-      return db.prepare("SELECT id, content, status FROM cv_revisions WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY created_at, id").all(chatId.parse(id), userId);
+      return db.prepare("SELECT id, content, status FROM cv_revisions WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY created_at, id").all(chatId.parse(id), userId).map(row => ({ ...row }));
+    },
+    getCvWorkspace(id: string) {
+      if (this.getChat(id)?.category !== "build") throw new Error("Build chat not found.");
+      const context = db.prepare("SELECT settings, version, accepted_revision FROM build_context WHERE chat_id = ?").get(id)!;
+      const revisions: CvRevision[] = db.prepare("SELECT id, content, status, profile_revision, explanation FROM cv_revisions WHERE chat_id = ? ORDER BY rowid DESC").all(id).map(row => ({
+        id: String(row.id), content: cvSchema.parse(JSON.parse(String(row.content))), status: row.status as CvRevision["status"],
+        profileRevision: row.profile_revision === null ? null : String(row.profile_revision), explanation: String(row.explanation),
+      }));
+      return { settings: buildSettings.parse(JSON.parse(String(context.settings))), version: Number(context.version), acceptedId: context.accepted_revision === null ? null : String(context.accepted_revision), revisions };
+    },
+    updateBuildSettings(id: string, input: unknown, expectedVersion: number) {
+      const settings = buildSettings.parse(input);
+      z.number().int().nonnegative().parse(expectedVersion);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const workspace = this.getCvWorkspace(id);
+        if (this.getMessages(id).some(message => message.status === "pending")) throw new Error("Wait for the reply before changing job details.");
+        if (workspace.version !== expectedVersion) throw new Error("Job details changed. Refresh before saving.");
+        db.prepare("UPDATE build_context SET settings = ?, version = version + 1 WHERE chat_id = ?").run(JSON.stringify(settings), id);
+        db.exec("COMMIT");
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
+    },
+    changeCvRevision(input: unknown) {
+      const { chatId: id, revisionId, action, expectedAcceptedId } = cvRevisionAction.parse(input);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const workspace = this.getCvWorkspace(id);
+        if (this.getMessages(id).some(message => message.status === "pending")) throw new Error("Wait for the reply before changing CV revisions.");
+        if (workspace.acceptedId !== expectedAcceptedId) throw new Error("Accepted CV changed. Refresh before continuing.");
+        const revision = workspace.revisions.find(item => item.id === revisionId);
+        if (!revision) throw new Error("CV revision not found in this chat.");
+        if (action === "restore") {
+          db.prepare("INSERT INTO cv_revisions(id, chat_id, content, status, profile_revision, explanation) VALUES (?, ?, ?, 'draft', ?, ?)").run(randomUUID(), id, JSON.stringify(revision.content), revision.profileRevision, revision.explanation);
+        } else {
+          if (revision.status !== "draft") throw new Error("Only a draft can be accepted or discarded.");
+          db.prepare("UPDATE cv_revisions SET status = ? WHERE id = ?").run(action === "accept" ? "accepted" : "discarded", revisionId);
+          if (action === "accept") db.prepare("UPDATE build_context SET accepted_revision = ? WHERE chat_id = ?").run(revisionId, id);
+        }
+        db.exec("COMMIT");
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
     },
     getProfileRevisions(): ProfileRevision[] {
       return db.prepare("SELECT id, markdown FROM profile_revisions WHERE user_id = ? ORDER BY rowid DESC").all(userId).map(row => ({ id: String(row.id), markdown: String(row.markdown) }));
@@ -232,6 +298,7 @@ export function openStore(path: string) {
       const { category, title } = chatInput.parse(input);
       const id = randomUUID();
       db.prepare("INSERT INTO chats(id, user_id, category, title) VALUES (?, ?, ?, ?)").run(id, userId, category, title);
+      if (category === "build") db.prepare("INSERT INTO build_context(chat_id, settings) VALUES (?, ?)").run(id, JSON.stringify(defaultBuildSettings));
       return this.getChat(id)!;
     },
   };

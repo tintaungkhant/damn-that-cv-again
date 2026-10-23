@@ -47,3 +47,11 @@ The shadcn CLI recognized this installed Next.js project and Tailwind v4, initia
 Schema v2 adds `profile_proposals` and a permanent `profile_block_ids` ledger in a sequential transaction, preserving the v1 tables and history. Proposals reference their source user message and chat, so chat deletion removes unsaved proposals but never confirmed profile revisions. An assistant reply and its validated proposal commit atomically only after provider completion. New pending batches supersede previous pending batches in that chat only after successful completion.
 
 Approval recomputes the preview inside `BEGIN IMMEDIATE` and compares the current revision to the revision the user reviewed. Stale operations can reapply only when each existing target (including insertion anchors) is unchanged. Conflicts require reconciliation and a new approval. Undo appends the historical document as a new revision; it does not delete history or release used block IDs. Revisions use SQLite insertion order to resolve equal timestamps deterministically. Public profile records are plain objects for React transport.
+
+## Ticket 06 extension
+
+Schema v3 adds per-build-chat settings, a settings version, and an explicit accepted-revision pointer in `build_context`. CV revisions retain their source profile revision and the accompanying selection explanation separately from CV JSON. Existing tables and documents migrate in place; the latest previously accepted revision initializes the pointer.
+
+Successful replies save assistant text, profile proposals, and CV drafts in one transaction. Every CV claim must reference a confirmed block in its request's profile snapshot; Open questions cannot support claims. Snapshot references preserve evidence context if the shared profile later changes. This validates references, not semantic truth; career-editor instructions and manual realistic-input checks cover factual wording.
+
+Acceptance changes only the explicit pointer and marks the selected draft accepted. Discard applies only to drafts. Restore appends a draft from history and requires a separate acceptance. Accepted history is never overwritten. Revision mutations compare the accepted pointer reviewed by the user and reject active replies; settings use an optimistic version check. Deleting a build chat cascades to its settings and CVs.

@@ -101,12 +101,12 @@ test("a newer database version is refused without overwriting stored data", () =
   const chat = store.createChat({ category: "profile", title: "Preserve me" });
   store.close();
   const future = new DatabaseSync(path);
-  future.exec("PRAGMA user_version = 3");
+  future.exec("PRAGMA user_version = 4");
   future.close();
   try {
     assert.throws(() => openStore(path), /newer/);
     const fixture = new DatabaseSync(path);
-    fixture.exec("PRAGMA user_version = 2");
+    fixture.exec("PRAGMA user_version = 3");
     fixture.close();
     store = openStore(path);
     assert.equal(store.getChat(chat.id)?.title, "Preserve me");

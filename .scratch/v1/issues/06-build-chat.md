@@ -1,6 +1,6 @@
 # 06: Build CV chats
 
-Status: needs-triage
+Status: claimed
 Blocked by: 04, 05
 
 ## Goal
@@ -25,3 +25,5 @@ Tailor a CV to a pasted job description.
 - [ ] Drafts persist independently of acceptance. Accepted CVs survive profile changes and discarded proposals (acceptance condition 5).
 
 ## Comments
+
+2026-10-23: Storage slice adds schema v3, per-chat job settings, automatic draft persistence, accepted pointers, discard, restore-as-draft, profile snapshot references, and evidence checks. Tests cover migration, restart, stale actions, rollback, isolation, and deletion. Provider and UI work remain.
