@@ -18,11 +18,13 @@ A throwaway script outside the app, under `.scratch/v1/spike/`. It must:
 
 ## Acceptance
 
-- [ ] A run with no API key in the environment succeeds.
-- [ ] Text deltas arrive before the turn completes.
-- [ ] The tool call arrives with input that passes the zod schema.
-- [ ] Neither the user's personal `CLAUDE.md` nor the built-in tools affect the reply.
-- [ ] Time to first token and total latency are recorded for a realistic prompt.
-- [ ] Findings are written to `.scratch/v1/spike/findings.md`: SDK version, exact options used, latency, usage, and any blockers.
+- [x] A run with no API key in the environment succeeds.
+- [x] Text deltas arrive before the turn completes.
+- [x] The tool call arrives with input that passes the zod schema.
+- [x] Neither the user's personal `CLAUDE.md` nor the built-in tools affect the reply.
+- [x] Time to first token and total latency are recorded for a realistic prompt.
+- [x] Findings are written to `.scratch/v1/spike/findings.md`: SDK version, exact options used, latency, usage, and any blockers.
 
 ## Comments
+
+Spike done on 2026-10-23. Verdict: go. Script and findings are in `.scratch/v1/spike/` (`spike.ts`, `findings.md`). Two runs with no API key passed every acceptance check. First text delta came at about 2.4 to 3.2 s and the full turn took about 12.5 to 13.4 s on `claude-opus-5-5`.
