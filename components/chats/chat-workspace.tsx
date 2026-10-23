@@ -26,7 +26,7 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Message as MessageRow, MessageContent, MessageFooter } from "@/components/ui/message";
 import { Marker, MarkerContent, MarkerIcon } from "@/components/ui/marker";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -247,7 +247,6 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
           <EmptyHeader>
             <EmptyMedia variant="icon"><SparklesIcon /></EmptyMedia>
             <EmptyTitle>{build ? "Build your next CV" : "Start with your story"}</EmptyTitle>
-            <EmptyDescription>{build ? "Save the job description in the workspace, then ask for a tailored draft." : "Paste rough career notes. You review proposed changes before they are saved to your shared profile."}</EmptyDescription>
           </EmptyHeader>
           {build && !cv?.settings.jobDescription && <EmptyContent><Button variant="outline" onClick={() => review("job")}>Add job description</Button></EmptyContent>}
         </Empty> : <MessageScroller>
@@ -344,7 +343,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
     </div>
     {!wide && <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl">
-        <SheetHeader className="border-b"><SheetTitle>{build ? "CV workspace" : "Career profile"}</SheetTitle><SheetDescription>Nothing is saved or accepted without your approval.</SheetDescription></SheetHeader>
+        <SheetHeader className="border-b"><SheetTitle>{build ? "CV workspace" : "Career profile"}</SheetTitle><SheetDescription className="sr-only">Review documents for this chat.</SheetDescription></SheetHeader>
         <div className="min-h-0 flex-1">{workspacePanel}</div>
       </SheetContent>
     </Sheet>}

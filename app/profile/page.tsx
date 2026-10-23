@@ -16,7 +16,6 @@ export default function ProfilePage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Career profile</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Shared by every chat. Changes are proposed in chats and saved only after your approval.</p>
         </div>
         <Suspense fallback={<div className="flex flex-col gap-3"><Skeleton className="h-8 w-56" /><Skeleton className="h-64" /></div>}>
           <Profile />

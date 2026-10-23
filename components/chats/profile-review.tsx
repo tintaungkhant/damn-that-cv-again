@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CodeBlock, CodeBlockContent, CodeBlockHeader, CodeBlockLine, CodeBlockTitle } from "@/components/ui/code-block";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
@@ -37,7 +37,6 @@ export function ProfileProposals({ chatId, workspace, onChange, onRevise, sendin
     <EmptyHeader>
       <EmptyMedia variant="icon"><CheckIcon /></EmptyMedia>
       <EmptyTitle>Nothing awaiting approval</EmptyTitle>
-      <EmptyDescription>When the assistant proposes profile changes, compare them here before anything is saved.</EmptyDescription>
     </EmptyHeader>
   </Empty>;
   return <div className="flex flex-col gap-6">
@@ -88,7 +87,6 @@ export function ConfirmedProfile({ workspace }: { workspace: ProfileWorkspace })
     <EmptyHeader>
       <EmptyMedia variant="icon"><UserRoundIcon /></EmptyMedia>
       <EmptyTitle>No confirmed profile yet</EmptyTitle>
-      <EmptyDescription>Paste rough career notes into a profile chat to get a first proposal.</EmptyDescription>
     </EmptyHeader>
   </Empty>;
   return <Document text={current.markdown} />;
@@ -104,7 +102,6 @@ export function ProfileHistory({ chatId, workspace, onChange, sending }: Props) 
     <EmptyHeader>
       <EmptyMedia variant="icon"><HistoryIcon /></EmptyMedia>
       <EmptyTitle>No history yet</EmptyTitle>
-      <EmptyDescription>Approved profiles appear here. Restoring one adds a new revision.</EmptyDescription>
     </EmptyHeader>
   </Empty>;
   return <div className="flex flex-col gap-4">

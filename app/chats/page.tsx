@@ -13,7 +13,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { ListPagination } from "@/components/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 type Query = Promise<Record<string, string | string[] | undefined>>;
 const labels = { build: "CV chats", profile: "Profile chats" };
@@ -39,7 +39,7 @@ async function Chats({ searchParams }: { searchParams: Query }) {
   return <><PageHeader trail={[{ label: "Home", href: "/" }, { label }]} />
     <div className="flex-1 overflow-y-auto"><div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold">{label}</h1><p className="text-sm text-muted-foreground">Most recent activity first.</p></div>
+        <h1 className="text-2xl font-semibold">{label}</h1>
         <NewChatDialog category={filters.category}><Button><PlusIcon />New chat</Button></NewChatDialog>
       </div>
       <section className="flex flex-col gap-4" aria-label={label}>
@@ -49,7 +49,7 @@ async function Chats({ searchParams }: { searchParams: Query }) {
           <Button type="submit" variant="outline">Search</Button>
         </form>
         <p className="text-sm text-muted-foreground">{result.total} chats · Page {result.page} of {Math.max(1, Math.ceil(result.total / 25))}</p>
-        {result.items.length === 0 && <Empty className="border"><EmptyHeader><EmptyTitle>No chats found</EmptyTitle><EmptyDescription>Create a chat or change your search.</EmptyDescription></EmptyHeader></Empty>}
+        {result.items.length === 0 && <Empty className="border"><EmptyHeader><EmptyTitle>No chats found</EmptyTitle></EmptyHeader></Empty>}
         {result.items.map(chat => <Item key={chat.id} variant="outline">
           <ItemMedia variant="icon">{chat.category === "build" ? <FileTextIcon /> : <MessagesSquareIcon />}</ItemMedia>
           <ItemContent>

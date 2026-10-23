@@ -80,7 +80,7 @@ export function JobDialog({ job, children }: { job?: Job; children: React.ReactN
     <DialogContent className="sm:max-w-xl">
       <DialogHeader>
         <DialogTitle>{job ? "Edit job" : "New job"}</DialogTitle>
-        <DialogDescription>{job ? "Changes are recorded in the activity history." : "Saved links are never fetched."}</DialogDescription>
+        <DialogDescription className="sr-only">{job ? "Edit job details." : "Create a job."}</DialogDescription>
       </DialogHeader>
       <JobForm job={job} onSaved={() => { setOpen(false); toast.success("Job saved."); }} />
     </DialogContent>

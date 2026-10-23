@@ -8,9 +8,9 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 export default function Home() {
   return <>
@@ -19,13 +19,11 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4 sm:p-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Your career, in focus</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Build one confirmed career profile, then tailor a CV for each opportunity.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>1. Confirm your profile</CardTitle>
-              <CardDescription>Paste rough career notes. The assistant proposes changes and you approve what gets saved.</CardDescription>
               <CardAction><UserRoundIcon className="size-5 text-muted-foreground" /></CardAction>
             </CardHeader>
             <CardFooter className="mt-auto gap-2">
@@ -36,7 +34,6 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>2. Tailor a CV</CardTitle>
-              <CardDescription>Save a job description and get a draft built only from confirmed facts. Accept it when it reads right.</CardDescription>
               <CardAction><FileTextIcon className="size-5 text-muted-foreground" /></CardAction>
             </CardHeader>
             <CardFooter className="mt-auto">
@@ -59,7 +56,7 @@ async function RecentChats() {
   await io();
   const chats = getStore().listChats({ limit: 8 }).items;
   if (chats.length === 0) return <Empty className="border border-dashed">
-    <EmptyHeader><EmptyTitle>No chats yet</EmptyTitle><EmptyDescription>Start with a profile chat so later CVs have confirmed facts to draw on.</EmptyDescription></EmptyHeader>
+    <EmptyHeader><EmptyTitle>No chats yet</EmptyTitle></EmptyHeader>
   </Empty>;
   return <ItemGroup>
     {chats.map(chat => <Item key={chat.id} variant="outline" asChild>

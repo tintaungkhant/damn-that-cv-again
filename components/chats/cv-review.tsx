@@ -15,8 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
+import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { CodeBlock, CodeBlockActions, CodeBlockContent, CodeBlockCopyButton, CodeBlockHeader, CodeBlockLine, CodeBlockTitle } from "@/components/ui/code-block";
 
 export type CvWorkspace = ReturnType<ReturnType<typeof openStore>["getCvWorkspace"]>;
@@ -113,7 +113,6 @@ export function JobDetails({ chatId, workspace, onChange, sending, onBusyChange,
     <Item variant="outline">
       <ItemContent>
         <ItemTitle>Ready for a draft?</ItemTitle>
-        <ItemDescription>Prepares an editable chat message. Press send to generate.</ItemDescription>
       </ItemContent>
       <ItemActions><Button variant="secondary" disabled={disabled || !workspace.settings.jobDescription} onClick={() => onRevise("Create a tailored CV draft for the saved job description and preferences using the latest confirmed career profile. Explain your selections and alternatives.")}><SparklesIcon />Prepare draft request</Button></ItemActions>
     </Item>
@@ -127,7 +126,6 @@ export function CvDraft({ chatId, workspace, onChange, sending, onBusyChange, on
     <EmptyHeader>
       <EmptyMedia variant="icon"><FileTextIcon /></EmptyMedia>
       <EmptyTitle>No draft awaiting review</EmptyTitle>
-      <EmptyDescription>Save job details, then send a draft request. Completed drafts appear here.</EmptyDescription>
     </EmptyHeader>
   </Empty>;
   function change(action: "accept" | "discard") {
@@ -153,7 +151,6 @@ export function CvAccepted({ chatId, workspace, sending, onBusyChange, currentPr
     <EmptyHeader>
       <EmptyMedia variant="icon"><CheckIcon /></EmptyMedia>
       <EmptyTitle>No accepted CV yet</EmptyTitle>
-      <EmptyDescription>Review a draft and choose Accept this CV. Only accepted CVs can be exported.</EmptyDescription>
     </EmptyHeader>
     {workspace.revisions.some(item => item.status === "draft") && <EmptyContent><Button variant="outline" onClick={onShowDraft}>Review draft</Button></EmptyContent>}
   </Empty>;
@@ -186,7 +183,6 @@ export function CvAccepted({ chatId, workspace, sending, onBusyChange, currentPr
     <Item variant="muted" size="sm">
       <ItemContent>
         <ItemTitle>Export accepted CV</ItemTitle>
-        <ItemDescription className="line-clamp-none">Exports this accepted CV only, without evidence or selection notes.</ItemDescription>
       </ItemContent>
       <ItemActions>
         <Button size="sm" variant="outline" disabled={pending || sending} onClick={() => exportJson("copy")}><ClipboardCopyIcon />Copy JSON</Button>
@@ -205,7 +201,6 @@ export function CvHistory({ chatId, workspace, onChange, sending, onBusyChange, 
     <EmptyHeader>
       <EmptyMedia variant="icon"><HistoryIcon /></EmptyMedia>
       <EmptyTitle>No revisions yet</EmptyTitle>
-      <EmptyDescription>Completed CV drafts appear here, including accepted and discarded ones.</EmptyDescription>
     </EmptyHeader>
   </Empty>;
   return <div className="flex flex-col gap-4">

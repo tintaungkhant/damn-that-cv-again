@@ -7,7 +7,7 @@ import { NewChatDialog } from "@/components/chats/forms";
 import { ChatNavItem, NavLink } from "@/components/chat-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail,
 } from "@/components/ui/sidebar";
 
@@ -18,7 +18,7 @@ export function AppSidebar() {
         <SidebarMenuButton size="lg" asChild tooltip="Home">
           <Link href="/">
             <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"><SparklesIcon className="size-4" /></span>
-            <span className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-medium">Damn! That CV Again</span><span className="truncate text-xs text-muted-foreground">Personal workspace</span></span>
+            <span className="truncate text-sm font-medium">Damn! That CV Again</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem></SidebarMenu>
@@ -40,9 +40,6 @@ export function AppSidebar() {
         <ChatGroups />
       </Suspense>
     </SidebarContent>
-    <SidebarFooter>
-      <p className="px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">Saved locally on this computer.</p>
-    </SidebarFooter>
     <SidebarRail />
   </Sidebar>;
 }

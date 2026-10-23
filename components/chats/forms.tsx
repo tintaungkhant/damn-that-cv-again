@@ -29,7 +29,7 @@ export function NewChatDialog({ category = "profile", children }: { category?: C
       <form action={action} className="grid gap-6">
         <DialogHeader>
           <DialogTitle>New chat</DialogTitle>
-          <DialogDescription>Choose what this conversation is for. You can keep as many chats as you like.</DialogDescription>
+          <DialogDescription className="sr-only">Choose a purpose and title.</DialogDescription>
         </DialogHeader>
         <FieldGroup>
           <FieldSet>

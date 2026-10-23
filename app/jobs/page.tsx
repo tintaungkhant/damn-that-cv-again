@@ -14,14 +14,14 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyTitle, EmptyContent } from "@/components/ui/empty";
 
 type Query = Promise<Record<string, string | string[] | undefined>>;
 export default function JobsPage({ searchParams }: { searchParams: Query }) {
   return <><PageHeader trail={[{ label: "Home", href: "/" }, { label: "Jobs" }]} />
     <div className="flex-1 overflow-y-auto"><div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold">Jobs</h1><p className="text-sm text-muted-foreground">Track applications and updates. Saved links are never fetched.</p></div>
+        <h1 className="text-2xl font-semibold">Jobs</h1>
         <JobDialog><Button><PlusIcon />New job</Button></JobDialog>
       </div>
       <Suspense fallback={<Skeleton className="h-96" />}><Jobs searchParams={searchParams} /></Suspense>
@@ -52,7 +52,7 @@ async function Jobs({ searchParams }: { searchParams: Query }) {
       {filtered && <Button variant="ghost" asChild><Link href="/jobs">Reset</Link></Button>}
     </form>
     {result.items.length === 0 ? <Empty className="border">
-      <EmptyHeader><EmptyTitle>{filtered ? "No matching jobs" : "No jobs yet"}</EmptyTitle><EmptyDescription>{filtered ? "Change or reset your filters." : "Add the first application you want to track."}</EmptyDescription></EmptyHeader>
+      <EmptyHeader><EmptyTitle>{filtered ? "No matching jobs" : "No jobs yet"}</EmptyTitle></EmptyHeader>
       {!filtered && <EmptyContent><JobDialog><Button><PlusIcon />New job</Button></JobDialog></EmptyContent>}
     </Empty> : <div className="rounded-lg border">
       <Table>
