@@ -87,7 +87,7 @@ export function openStore(path: string) {
       db.prepare("DELETE FROM chats WHERE id = ? AND user_id = ?").run(chat.id, userId);
     },
     getMessages(id: string): Message[] {
-      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY rowid").all(chatId.parse(id), userId) as Message[];
+      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY rowid").all(chatId.parse(id), userId).map(row => ({ ...row })) as Message[];
     },
     beginTurn(input: unknown): Message {
       const parsed = turnInput.parse(input);

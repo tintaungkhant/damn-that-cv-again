@@ -34,3 +34,9 @@ The SDK must be listed in `serverExternalPackages`. Bundling its native process 
 ## Manual visual check
 
 Open http://localhost:3800, create or open a chat, and send career notes. Check that text appears incrementally, Stop reply exposes retry, retry does not duplicate the user message, and reopening retains the complete conversation. Visual review remains with the user under `.ai/rules/testing.md`.
+
+## Send/reopen serialization regression
+
+The initial probes covered streaming but omitted returning populated SQLite message rows through React. Node SQLite rows have null prototypes, which React rejects. This caused errors both in the conversation Server Component props and in `readChatMessages`, despite streaming itself working.
+
+`getMessages` now copies each row into an ordinary object. `lib/storage/serialization.test.ts` reproduces the rejection using the installed React encoder and passes after the fix. `node .scratch/v1/streaming/reopen.ts` checks the production Flight response for server error frames and decodes the real message-read action for every existing populated chat; it performs no writes or visual assertions. Two saved conversations passed. A fresh production chat reply also passed (first delta 1803 ms, done 2325 ms). All 20 behavior tests and static/build checks pass.
