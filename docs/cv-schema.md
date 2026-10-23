@@ -2,7 +2,7 @@
 
 Status: approved by the user on 2026-10-23. Ticket 05 is complete; Ticket 06 generation may use this contract.
 
-The single source of truth is `lib/storage/cv.ts` (`cvSchema`, inferred `Cv`, and `exportCv`). No UI, generation tool, storage migration, or copy/download flow is added in this ticket.
+The single source of truth is `lib/storage/cv.ts` (`cvSchema`, inferred `Cv`, and `exportCv`). Ticket 05 introduced the contract; Ticket 06 added generation and review, and Ticket 07 added accepted-revision copy/download.
 
 ## Approved fields
 
@@ -29,7 +29,7 @@ Contact fields and URLs are metadata, outside the claim wrapper. Factual prose b
 
 `exportCv(unknown)` first validates the entire internal document, then returns formatted JSON with every claim's `evidence` removed. Claims remain objects such as `{ "text": "Built retry handling." }`, preserving the same structure at every claim location. It preserves section, entry, and bullet order. Exported JSON does not pass the internal input schema because evidence is intentionally absent; import of exported CV JSON is outside scope.
 
-There are no fields for explanations, job descriptions, chat history, provider metadata, or credentials. Unknown metadata is rejected before export rather than silently accepted. Ticket 07 will connect this tested conversion to copy/download for an accepted revision.
+There are no fields for explanations, job descriptions, chat history, provider metadata, or credentials. Unknown metadata is rejected before export rather than silently accepted. Ticket 07 connects this conversion to Copy JSON and Download JSON under Accepted CV. The Server Action validates chat/revision IDs and rejects drafts, revisions from another chat, and a stale accepted revision. Only CV content is read; selection notes remain outside the document. The browser creates an application/json Blob and downloads a .json file. Clipboard denial shows a message directing the user to download instead.
 
 ## Examples
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useTransition } from "react";
-import { changeCvRevision, readCvWorkspace, saveBuildSettings } from "@/app/build-actions";
+import { changeCvRevision, exportAcceptedCv, readCvWorkspace, saveBuildSettings } from "@/app/build-actions";
 import type { openStore } from "@/lib/storage/store";
 import type { Cv } from "@/lib/storage/cv";
 import type { CvRevision } from "@/lib/storage/build";
@@ -65,6 +65,32 @@ export function CvReview({ chatId, workspace, onChange, onRevise, sending, onBus
       finally { onBusyChange(false); }
     });
   }
+  function exportJson(mode: "copy" | "download") {
+    if (!accepted) return;
+    run(async () => {
+      let json: string;
+      try { json = await exportAcceptedCv({ chatId, revisionId: accepted.id }); }
+      catch { setNotice("Could not export. Refresh CV workspace and check the accepted CV before retrying."); return; }
+      if (mode === "copy") {
+        try {
+          await navigator.clipboard.writeText(json);
+          setNotice("Accepted CV JSON copied. Evidence and selection notes excluded.");
+        } catch {
+          setNotice("Clipboard access failed. Use Download JSON instead.");
+        }
+      } else {
+        const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `cv-${accepted.id}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setNotice("Accepted CV JSON download requested. Evidence and selection notes excluded.");
+      }
+    });
+  }
   function change(revisionId: string, action: "accept" | "discard" | "restore") {
     run(async () => {
       onChange(await changeCvRevision({ chatId, revisionId, action, expectedAcceptedId: workspace.acceptedId }));
@@ -96,7 +122,10 @@ export function CvReview({ chatId, workspace, onChange, onRevise, sending, onBus
       </form>
       <div className="space-y-2"><Button variant="secondary" disabled={pending || sending || !workspace.settings.jobDescription} onClick={() => onRevise("Create a tailored CV draft for the saved job description and preferences using the latest confirmed career profile. Explain your selections and alternatives.")}>Prepare draft request</Button><p className="text-xs text-muted-foreground">Prepares an editable chat message. Press Send message to generate.</p></div>
       <section className="space-y-3 border-t pt-4"><h3 className="font-semibold">Accepted CV</h3>
-        {accepted ? <RevisionDocument revision={accepted} currentProfileId={currentProfileId} /> : <p className="text-sm text-muted-foreground">No accepted CV yet. Review a draft and choose Accept this CV.</p>}
+        {accepted ? <><RevisionDocument revision={accepted} currentProfileId={currentProfileId} />
+          <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={pending || sending} onClick={() => exportJson("copy")}>Copy JSON</Button><Button variant="outline" disabled={pending || sending} onClick={() => exportJson("download")}>Download JSON</Button></div>
+          <p className="text-xs text-muted-foreground">Exports this accepted CV only, without evidence or selection notes. Raw JSON above shows internal evidence.</p>
+        </> : <p className="text-sm text-muted-foreground">No accepted CV yet. Review a draft and choose Accept this CV.</p>}
       </section>
       <Tabs defaultValue="draft"><TabsList><TabsTrigger value="draft">Draft review</TabsTrigger><TabsTrigger value="history">History ({workspace.revisions.length})</TabsTrigger></TabsList>
         <TabsContent value="draft" className="space-y-3">

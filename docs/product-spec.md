@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Ticket 05 defines the approved CV contract. Ticket 06 implements saved job details, tailored CV drafts, explicit acceptance, discard, history, restoration, readable/JSON views, and selection notes. Copy/download export remains Ticket 07.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Ticket 05 defines the approved CV contract. Ticket 06 implements saved job details, tailored CV drafts, explicit acceptance, discard, history, restoration, readable/JSON views, and selection notes. Ticket 07 adds validated copy/download JSON export for the current accepted CV.
 
 ## Purpose
 
@@ -100,6 +100,7 @@ Use a versioned, validated JSON contract with flexible content. Define it as a s
 - Do not require education, projects, soft skills, or another fixed list of sections.
 - Validate the structure of included content without forcing irrelevant fields.
 - Export CV content only. Exclude chat history, selection explanations, internal evidence references, credentials, and provider metadata.
+- Export only the current accepted revision; reject stale revision requests instead of silently exporting a different CV.
 - Allow copying JSON and downloading a JSON file. A Server Action returns the JSON, and the browser builds the download file.
 
 ## Interface
