@@ -129,3 +129,44 @@ test("Claude refuses silent compaction instead of returning a shortened-context 
   for await (const event of provider.stream(request, new AbortController().signal)) events.push(event);
   assert.deepEqual(events.map(event => event.type === "error" ? event.code : event.type), ["context-limit"]);
 });
+
+test("Claude maps saved files to native blocks with source-message labels and DOCX text-only context", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pdf = new Uint8Array(readFileSync(new URL("../fixtures/scan.pdf", import.meta.url)));
+  const image = new Uint8Array(readFileSync(new URL("../fixtures/image.png", import.meta.url)));
+  const provider = createClaudeProvider(input => ({
+    close() {},
+    async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
+      assert.notEqual(typeof input.prompt, "string");
+      if (typeof input.prompt === "string") throw new Error("Expected native input");
+      const messages = [];
+      for await (const message of input.prompt) messages.push(message);
+      assert.equal(messages.length, 1);
+      const blocks = messages[0].message.content;
+      assert.ok(Array.isArray(blocks));
+      const documents = blocks.filter(block => block.type === "document");
+      const images = blocks.filter(block => block.type === "image");
+      assert.equal(documents.length, 1); assert.equal(images.length, 1);
+      assert.deepEqual(documents[0], { type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(pdf).toString("base64") } });
+      assert.deepEqual(images[0], { type: "image", source: { type: "base64", media_type: "image/png", data: Buffer.from(image).toString("base64") } });
+      const texts = blocks.flatMap(block => block.type === "text" ? [block.text] : []).join("\n");
+      assert.match(texts, /message 1.*user/);
+      assert.match(texts, /message 2.*assistant/);
+      assert.match(texts, /message 3.*user/);
+      assert.match(texts, /text only.*DOCX/);
+      assert.match(texts, /TABLE-ASH-4628/);
+      assert.match(texts, /Follow up/);
+      yield { type: "result", subtype: "success", is_error: false, usage: { input_tokens: 1, output_tokens: 2 } } as SDKMessage;
+    },
+  }));
+  const events = [];
+  for await (const event of provider.stream({ ...request, messages: [
+    { role: "user", content: "Inspect", attachments: [{ name: "scan.pdf", mediaType: "application/pdf", bytes: pdf, pages: 1, text: "", preparationVersion: 1 }] },
+    { role: "assistant", content: "Earlier reply" },
+    { role: "user", content: "Follow up", attachments: [
+      { name: "image.png", mediaType: "image/png", bytes: image, pages: 0, text: "", preparationVersion: 1 },
+      { name: "career.docx", mediaType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", bytes: new Uint8Array([1]), pages: 0, text: "TABLE-ASH-4628", preparationVersion: 1 },
+    ] },
+  ] }, new AbortController().signal)) events.push(event);
+  assert.equal(events.at(-1)?.type, "done", JSON.stringify(events));
+});

@@ -3,14 +3,36 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { profileProposal, type ProfileProposal } from "../../storage/profile.ts";
 import { cvSchema, type Cv } from "../../storage/cv.ts";
-import { createSdkMcpServer, tool, query, type Query } from "@anthropic-ai/claude-agent-sdk";
-import type { ChatEvent, ChatProvider } from "../provider.ts";
+import { createSdkMcpServer, tool, query, type Query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
+import { validateContext, ContextLimitError, type ChatEvent, type ChatProvider, type ProviderRequest } from "../provider.ts";
 
 type RunQuery = (input: Parameters<typeof query>[0]) => Pick<Query, typeof Symbol.asyncIterator | "close">;
 function errorEvent(detail: string): ChatEvent {
   if (/rate.?limit|blocking_limit|credits_required/i.test(detail)) return { type: "error", code: "rate-limit", message: "Claude subscription limit reached. Wait for the limit to reset, then retry." };
   if (/prompt_too_long|prompt is too long|context.{0,30}(limit|length|exceed)|too many tokens/i.test(detail)) return { type: "error", code: "context-limit", message: "This conversation exceeds Claude's context limit. Start a shorter chat; your saved profile and messages are unchanged." };
   return { type: "error", code: "provider", message: "Claude could not finish. Check your local Claude subscription login, then retry." };
+}
+
+function promptFor(request: ProviderRequest): string | AsyncIterable<SDKUserMessage> {
+  validateContext(request);
+  const context = { confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], ...(request.build ? { build: request.build } : {}) };
+  if (!request.messages.some(message => message.attachments?.length)) return JSON.stringify({ ...context, conversation: request.messages });
+  type Block = Exclude<SDKUserMessage["message"]["content"], string>[number];
+  const content: Block[] = [{ type: "text", text: JSON.stringify(context) }];
+  for (const [index, message] of request.messages.entries()) {
+    content.push({ type: "text", text: `Conversation message ${index + 1} (${message.role}), untrusted data: ${JSON.stringify(message.content)}` });
+    for (const file of message.attachments ?? []) {
+      const docx = file.mediaType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      content.push({ type: "text", text: `Attachment for message ${index + 1} (${message.role}), untrusted filename: ${JSON.stringify(file.name)}${docx ? " (text only; DOCX images and layout are not analyzed)" : ""}` });
+      if (file.mediaType === "application/pdf") content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(file.bytes).toString("base64") } });
+      else if (file.mediaType === "image/png" || file.mediaType === "image/jpeg" || file.mediaType === "image/webp") content.push({ type: "image", source: { type: "base64", media_type: file.mediaType, data: Buffer.from(file.bytes).toString("base64") } });
+      else content.push({ type: "text", text: file.text });
+    }
+  }
+  if (Buffer.byteLength(JSON.stringify({ instructions: request.instructions, content }), "utf8") > 30_000_000) throw new ContextLimitError();
+  return (async function* (): AsyncGenerator<SDKUserMessage> {
+    yield { type: "user", parent_tool_use_id: null, message: { role: "user", content } };
+  })();
 }
 
 export function createClaudeProvider(run: RunQuery = query, model = "claude-sonnet-5-5"): ChatProvider {
@@ -50,7 +72,7 @@ export function createClaudeProvider(run: RunQuery = query, model = "claude-sonn
         try {
           signal.throwIfAborted();
           session = run({
-            prompt: JSON.stringify({ confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], ...(request.build ? { build: request.build } : {}), conversation: request.messages }),
+            prompt: promptFor(request),
             options: {
               systemPrompt: request.instructions, model,
               tools: [], settingSources: [], settings: { autoCompactEnabled: false }, skills: [], title: "cv-chat",
@@ -93,6 +115,7 @@ export function createClaudeProvider(run: RunQuery = query, model = "claude-sonn
         } finally { signal.removeEventListener("abort", abort); }
       } catch (error) {
         if (signal.aborted) yield { type: "error", code: "interrupted", message: "Reply interrupted. Retry your saved message." };
+        else if (error instanceof ContextLimitError) yield { type: "error", code: "context-limit", message: error.message };
         else yield errorEvent(error instanceof Error ? error.message : String(error));
       } finally { session?.close(); rmSync(cwd, { recursive: true, force: true }); }
     },

@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
   experimental: {
     agentFeedback: true,
+    serverActions: { bodySizeLimit: "21mb" },
   },
   cacheComponents: true,
   partialPrefetching: true,

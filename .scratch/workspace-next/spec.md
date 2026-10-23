@@ -1,6 +1,6 @@
 # Workspace next: attachments, applications, and navigation
 
-Status: Planned on 2026-10-23 from the user's requested follow-up to Tickets 01–09. Ticket 10 feasibility is complete; application features are not implemented yet.
+Status: Planned on 2026-10-23 from the user's requested follow-up to Tickets 01–09. Ticket 10 feasibility is complete. Ticket 11 storage, bounded worker preparation, and provider replay are implemented; upload/download UI integration is in progress. Jobs and navigation remain planned.
 
 Implementation tickets continue at 10 in `issues/`. `docs/product-spec.md` remains the product scope source. Defaults below are implementation starting points, not existing behavior.
 
