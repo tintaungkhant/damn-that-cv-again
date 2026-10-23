@@ -9,8 +9,8 @@ Full export and restore of application data.
 
 ## Scope
 
-- Export all tables with a schema version. No credentials.
-- Restore: validate the file, show counts of chats, messages, and revisions, confirm, then replace in one transaction.
+- Export all tables with a schema version. No credentials. A Server Action returns the backup, and the browser builds the download file. No API endpoint (`.ai/rules/server-actions.md`).
+- Restore: upload the file as form data to a Server Action, validate the file, show counts of chats, messages, and revisions, confirm, then replace in one transaction.
 
 ## Acceptance
 

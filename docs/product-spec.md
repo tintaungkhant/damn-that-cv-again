@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. Implementation has not started. A feasibility spike on Claude subscription authentication, streaming, and tool calls gates all other work.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Application implementation has not started.
 
 ## Purpose
 
@@ -16,6 +16,7 @@ The application exports CV JSON. The user supplies that JSON to Claude externall
 - Store career history as Markdown with stable block IDs (see Profile format), not a structured career database.
 - Store users, chats, messages, profile revisions, and CV revisions as separate records.
 - Keep credentials outside SQLite, exported CVs, and application backups.
+- The browser reaches the server only through Server Actions. The application has no API endpoints (no Route Handlers) and the browser does not `fetch` its own server. See `.ai/rules/server-actions.md`.
 
 ## Chats
 
@@ -80,7 +81,7 @@ Begin with full context rather than retrieval, embeddings, or a vector database.
 
 ### Streaming and failure handling
 
-Assistant replies stream to the browser as they are generated. The server sends a stream of typed events: text deltas, proposals, usage, errors, and completion.
+Assistant replies stream to the browser as they are generated. A Server Action returns a stream of typed events: text deltas, proposals, usage, errors, and completion.
 
 - The user's message is saved before the provider request starts.
 - The assistant message and any proposals are saved only when the request completes successfully.
@@ -99,7 +100,7 @@ Use a versioned, validated JSON contract with flexible content. Define it as a s
 - Do not require education, projects, soft skills, or another fixed list of sections.
 - Validate the structure of included content without forcing irrelevant fields.
 - Export CV content only. Exclude chat history, selection explanations, internal evidence references, credentials, and provider metadata.
-- Allow copying JSON and downloading a JSON file.
+- Allow copying JSON and downloading a JSON file. A Server Action returns the JSON, and the browser builds the download file.
 
 ## Interface
 
@@ -133,7 +134,7 @@ Each user message makes one Agent SDK `query()` call:
 
 ## Backup and restore
 
-Provide full application data export and restore, including profile history, chats, messages, and CV revisions. Exclude credentials. Validate the backup before applying it, then show a confirmation summarizing its contents (counts of chats, messages, and revisions) before replacing existing data.
+Provide full application data export and restore, including profile history, chats, messages, and CV revisions. Exclude credentials. Validate the backup before applying it, then show a confirmation summarizing its contents (counts of chats, messages, and revisions) before replacing existing data. Export and restore both go through Server Actions; the backup file is uploaded as form data.
 
 ## Version-one exclusions
 
@@ -166,7 +167,8 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 
 ## Remaining implementation decisions
 
-- Confirm in the spike that the installed Agent SDK supports subscription login, partial-message streaming, in-process tools, and disabling built-in tools and local settings.
+- Resolved: the spike confirmed that the installed Agent SDK supports subscription login, partial-message streaming, in-process tools, and disabling built-in tools and local settings. See `.scratch/v1/spike/findings.md`.
+- Confirm that a Server Action can return a stream the browser reads incrementally, and how that interacts with sequential Server Action dispatch (ticket 03).
 - Define the exact flexible CV schema and the profile proposal operation schema.
 - Choose a compatible SQLite library and migration mechanism after inspecting the local runtime.
 - Choose the initial Claude model after the spike and a realistic-input trial (career profile, long conversation, CV export), evaluating relevance, output validity, latency, and reported usage.

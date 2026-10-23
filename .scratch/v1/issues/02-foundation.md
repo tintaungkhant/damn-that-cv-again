@@ -13,7 +13,7 @@ Durable storage and the chat list.
 - Tables: users, chats (category `profile` or `build`), messages, profile revisions, CV revisions.
 - Seed one user with a stable ID.
 - Initialize shadcn/ui (check its docs for Next.js 16 and Tailwind v4 support first). Build all UI from its components.
-- Chat list UI grouped by category: create, open, delete. Build chat deletion asks for confirmation and removes its messages and CV revisions. Profile chat deletion leaves the saved profile untouched.
+- Chat list UI grouped by category: create, open, delete. Reads happen in Server Components; create and delete are Server Actions. No API endpoints (`.ai/rules/server-actions.md`). Build chat deletion asks for confirmation and removes its messages and CV revisions. Profile chat deletion leaves the saved profile untouched.
 
 ## Acceptance
 
