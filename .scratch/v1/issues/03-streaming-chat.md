@@ -1,6 +1,6 @@
 # 03: Provider layer and streaming chat
 
-Status: needs-triage
+Status: claimed
 Blocked by: 01, 02
 
 ## Goal
@@ -23,3 +23,5 @@ Plain-text chat that streams through an isolated provider layer.
 - [ ] No file outside `lib/ai/claude/` imports the SDK (acceptance condition 10).
 
 ## Comments
+
+- 2026-10-23: Began implementation after reviewing completed dependencies 01 and 02. Storage turn lifecycle now saves before generation, retries the latest failed message in place, commits the assistant atomically, and recovers interrupted turns on app startup. Verified with storage behavior tests and typechecking.

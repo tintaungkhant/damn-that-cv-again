@@ -9,6 +9,11 @@ export const chatInput = z.object({
   title: z.string().trim().min(1).max(120),
 });
 const chatId = z.uuid();
+export type Message = { id: string; role: "user" | "assistant"; content: string; status: "pending" | "complete" | "failed" };
+export const turnInput = z.union([
+  z.object({ chatId: z.uuid(), content: z.string().trim().min(1).max(100_000) }).strict(),
+  z.object({ chatId: z.uuid(), retryId: z.uuid() }).strict(),
+]);
 export type Chat = { id: string; category: "profile" | "build"; title: string; created_at: string };
 
 export function openStore(path: string) {
@@ -81,8 +86,49 @@ export function openStore(path: string) {
       if (chat.category === "build" && confirmed !== true) throw new Error("Build chat deletion requires confirmation.");
       db.prepare("DELETE FROM chats WHERE id = ? AND user_id = ?").run(chat.id, userId);
     },
-    getMessages(id: string) {
-      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY created_at, id").all(chatId.parse(id), userId);
+    getMessages(id: string): Message[] {
+      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY rowid").all(chatId.parse(id), userId) as Message[];
+    },
+    beginTurn(input: unknown): Message {
+      const parsed = turnInput.parse(input);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        if (!this.getChat(parsed.chatId)) throw new Error("Chat not found.");
+        const messages = this.getMessages(parsed.chatId);
+        if (messages.some(message => message.status === "pending")) throw new Error("A reply is already in progress.");
+        let id: string;
+        if ("retryId" in parsed) {
+          const previous = messages.at(-1);
+          if (!previous || previous.id !== parsed.retryId || previous.role !== "user" || previous.status !== "failed") {
+            throw new Error("Only the latest failed message can be retried.");
+          }
+          id = previous.id;
+          db.prepare("UPDATE messages SET status = 'pending' WHERE id = ?").run(id);
+        } else {
+          if (messages.at(-1)?.status === "failed") throw new Error("Retry the failed message before sending another.");
+          id = randomUUID();
+          db.prepare("INSERT INTO messages(id, chat_id, role, content, status) VALUES (?, ?, 'user', ?, 'pending')").run(id, parsed.chatId, parsed.content);
+        }
+        db.exec("COMMIT");
+        return this.getMessages(parsed.chatId).find(message => message.id === id)!;
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
+    },
+    failTurn(id: string) {
+      db.prepare("UPDATE messages SET status = 'failed' WHERE id = ? AND role = 'user' AND status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").run(chatId.parse(id), userId);
+    },
+    recoverInterruptedTurns() {
+      db.prepare("UPDATE messages SET status = 'failed' WHERE status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").run(userId);
+    },
+    completeTurn(id: string, content: string) {
+      const text = z.string().trim().min(1).parse(content);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const pending = db.prepare("SELECT chat_id FROM messages WHERE id = ? AND role = 'user' AND status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").get(chatId.parse(id), userId);
+        if (!pending) throw new Error("This request is no longer active.");
+        db.prepare("INSERT INTO messages(id, chat_id, role, content, status) VALUES (?, ?, 'assistant', ?, 'complete')").run(randomUUID(), pending.chat_id, text);
+        db.prepare("UPDATE messages SET status = 'complete' WHERE id = ?").run(id);
+        db.exec("COMMIT");
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
     },
     getCvRevisions(id: string) {
       return db.prepare("SELECT id, content, status FROM cv_revisions WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY created_at, id").all(chatId.parse(id), userId);
