@@ -51,7 +51,7 @@ test("v3 text chats and confirmed documents survive the additive v4 migration", 
   const messages = store.getMessages(chat.id);
   store.close();
   const legacy = new DatabaseSync(path);
-  legacy.exec("DROP TABLE attachments; PRAGMA user_version = 3");
+  legacy.exec("DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; DROP TABLE attachments; PRAGMA user_version = 3");
   legacy.close();
   try {
     store = openStore(path);

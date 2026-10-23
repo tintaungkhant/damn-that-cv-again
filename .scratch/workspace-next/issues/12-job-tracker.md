@@ -1,6 +1,7 @@
 # 12: Track applied jobs and activity
 
 Status: ready-for-agent
+Completed: 2026-10-23 (visual acceptance remains user-run)
 
 ## Goal
 
@@ -12,15 +13,16 @@ Implement [job-tracker scope](../spec.md#applied-job-tracker): SQLite migration,
 
 ## Acceptance
 
-- [ ] Required URL/title, optional description, six statuses, Applied default, and persistence work.
-- [ ] Comment-only, status-only, and combined submissions produce correct immutable events; combined submissions are atomic.
-- [ ] Creation and effective field edits retain old/new values; no-ops do not create history.
-- [ ] Invalid URLs/statuses, blank submissions, stale writes, repeated submissions, and missing/wrong-owner records have behavior tests.
-- [ ] Stable list pagination/search/status filters and activity ordering work across restart.
-- [ ] Comments render as plain text; URL never triggers server fetching; build-chat job settings remain independent.
-- [ ] Tests, typecheck, lint, build, synchronized docs, and manual scenarios accompany completed chunks.
+- [x] Required URL/title, optional description, six statuses, Applied default, and persistence work.
+- [x] Comment-only, status-only, and combined submissions produce correct immutable events; combined submissions are atomic.
+- [x] Creation and effective field edits retain old/new values; no-ops do not create history.
+- [x] Invalid URLs/statuses, blank submissions, stale writes, repeated submissions, and missing/wrong-owner records have behavior tests.
+- [x] Stable list pagination/search/status filters and activity ordering work across restart.
+- [x] Comments render as plain text; URL never triggers server fetching; build-chat job settings remain independent.
+- [x] Tests, typecheck, lint, build, synchronized docs, and manual scenarios accompany completed chunks.
 
 ## Comments
 
 - 2026-10-23: Planned. Jira-like means simple detail editing and activity history, not a board or configurable workflow.
 - 2026-10-23: User confirmed storage and Server Action test seams. Storage slice adds schema v5, validated job writes, immutable history, atomic combined activity, durable duplicate protection, ownership checks, and bounded SQL search/filter/pagination. Five focused tests cover restart, stable timestamp ties, invalid input, stale writes, wrong ownership, and injected transaction failure. Actions and UI follow. Existing Zod/SQLite dependencies suffice; see ADR-0001.
+- 2026-10-23: Completed Server Actions, `/jobs` list/create, `/jobs/[id]` field/activity forms and plain-text history, and Jobs sidebar navigation. Installed Native Select and Pagination through the shadcn CLI after checking its catalog. Seven new storage/action tests pass; the full suite passes all 69 tests. Typecheck, lint and production build pass. Legacy migration fixtures now remove v5 tables before simulating older schemas. See [manual checks and evidence](../../../docs/job-tracker-checks.md). No browser/visual checks ran; user visual acceptance remains pending.

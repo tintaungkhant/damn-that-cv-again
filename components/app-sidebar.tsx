@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
-import { FileTextIcon, PlusIcon, SparklesIcon, UserRoundIcon } from "lucide-react";
+import { BriefcaseBusinessIcon, FileTextIcon, PlusIcon, SparklesIcon, UserRoundIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
 import { NewChatDialog } from "@/components/chats/forms";
 import { ChatNavItem, NavLink } from "@/components/chat-nav";
@@ -29,6 +29,7 @@ export function AppSidebar() {
     <SidebarContent>
       <SidebarGroup>
         <SidebarMenu><SidebarMenuItem><NavLink href="/profile" tooltip="Career profile"><UserRoundIcon />Career profile</NavLink></SidebarMenuItem></SidebarMenu>
+        <SidebarMenu><SidebarMenuItem><NavLink href="/jobs" tooltip="Jobs"><BriefcaseBusinessIcon />Jobs</NavLink></SidebarMenuItem></SidebarMenu>
       </SidebarGroup>
       <Suspense fallback={<SidebarGroup><SidebarMenu>{[0, 1, 2].map(key => <SidebarMenuItem key={key}><Skeleton className="h-8" /></SidebarMenuItem>)}</SidebarMenu></SidebarGroup>}>
         <ChatGroups />

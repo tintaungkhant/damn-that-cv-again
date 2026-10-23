@@ -104,6 +104,34 @@ test("failed event insert rolls back status, version and submission key together
   } finally { fixture.close(); store.close(); rmSync(directory, { recursive: true, force: true }); }
 });
 
+test("v4 migration preserves existing chats, attachments and separate build settings", () => {
+  const directory = mkdtempSync(join(tmpdir(), "jobs-migration-"));
+  const path = join(directory, "app.sqlite");
+  let store = openStore(path);
+  try {
+    const chat = store.createChat({ category: "build", title: "CV chat" });
+    const settings = { jobDescription: "Independent tailoring input", targetRole: "Engineer", targetCompany: "Example", projectLimit: 3 };
+    store.updateBuildSettings(chat.id, settings, 0);
+    const bytes = new TextEncoder().encode("Attachment");
+    const turn = store.beginTurn({ chatId: chat.id, content: "Hello", attachments: [{ name: "notes.txt", mediaType: "text/plain", bytes, text: "Attachment", pages: 0, preparationVersion: 1 }] });
+    store.completeTurn(turn.id, "Saved");
+    const attachmentId = store.getMessages(chat.id)[0].attachments![0].id;
+    store.close();
+    const legacy = new DatabaseSync(path);
+    legacy.exec("DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; PRAGMA user_version = 4");
+    legacy.close();
+    store = openStore(path);
+    const job = store.createJob({ operationId: randomUUID(), title: "Unrelated", url: "https://example.com", description: "Tracker description" });
+    store.editJob({ id: job.id, operationId: randomUUID(), expectedVersion: 0, title: "Updated tracker", url: job.url, description: "Changed" });
+    assert.deepEqual(store.getCvWorkspace(chat.id).settings, settings);
+    assert.deepEqual(store.downloadAttachment(chat.id, attachmentId).bytes, bytes);
+    assert.equal(store.getMessages(chat.id).length, 2);
+    store.close(); store = openStore(path);
+    assert.equal(store.getJob(job.id)!.title, "Updated tracker");
+    assert.deepEqual(store.getCvWorkspace(chat.id).settings, settings);
+  } finally { store.close(); rmSync(directory, { recursive: true, force: true }); }
+});
+
 test("field edits and atomic status/comment activity preserve history, reject stale writes, and ignore field no-ops", () => {
   const store = openStore(":memory:");
   try {

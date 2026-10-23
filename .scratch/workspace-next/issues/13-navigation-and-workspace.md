@@ -1,7 +1,7 @@
 # 13: Scale chat navigation and collapse the workspace
 
 Status: ready-for-agent
-Blocked by: 12
+Blocked by: 12 (complete)
 
 ## Goal
 
@@ -23,3 +23,4 @@ Implement [navigation and panel scope](../spec.md#navigation-and-document-panel)
 ## Comments
 
 - 2026-10-23: Planned. Visual acceptance belongs to the user under `.ai/rules/testing.md`.
+- 2026-10-23: Ticket 12 implemented Jobs navigation and application tracking. Reuse the existing Jobs sidebar link while bounding chat navigation; do not add a second Jobs entry.
