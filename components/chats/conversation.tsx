@@ -1,5 +1,7 @@
 "use client";
 
+import { ProfileReview, type ProfileWorkspace } from "./profile-review";
+import { readProfileWorkspace } from "@/app/profile-actions";
 import { useRef, useState, useTransition } from "react";
 import { sendChatMessage, cancelChatReply, readChatMessages } from "@/app/chat-actions";
 import type { Message } from "@/lib/storage/store";
@@ -10,7 +12,8 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export function Conversation({ chatId, initialMessages }: { chatId: string; initialMessages: Message[] }) {
+export function Conversation({ chatId, initialMessages, initialProfile }: { chatId: string; initialMessages: Message[]; initialProfile: ProfileWorkspace }) {
+  const [profile, setProfile] = useState(initialProfile);
   const [messages, setMessages] = useState(initialMessages);
   const [content, setContent] = useState("");
   const [partial, setPartial] = useState("");
@@ -61,12 +64,15 @@ export function Conversation({ chatId, initialMessages }: { chatId: string; init
       } finally {
         active.current = null;
         try { setMessages(await readChatMessages(chatId)); } catch { /* Keep the visible conversation during a connection failure. */ }
-        if (finished) setPartial("");
+        if (finished) {
+          setPartial("");
+          try { setProfile(await readProfileWorkspace(chatId)); } catch { setError("Reply saved. Refresh to load the profile review."); }
+        }
       }
     });
   }
 
-  return <div className="space-y-4">
+  return <div className="grid items-start gap-6 lg:grid-cols-2"><div className="min-w-0 space-y-4">
     {messages.length === 0 && <p className="text-sm text-muted-foreground">Paste career notes or ask for advice to start.</p>}
     {messages.map(message => <MessageRow key={message.id} align={message.role === "user" ? "end" : "start"}>
       <MessageContent>
@@ -94,5 +100,5 @@ export function Conversation({ chatId, initialMessages }: { chatId: string; init
         if (id) startTransition(() => stop(id));
       }}>Stop reply</Button>}
     </form>
-  </div>;
+  </div><ProfileReview chatId={chatId} workspace={profile} onChange={setProfile} onRevise={setContent} sending={pending || !!needsRetry || !!storedPending} /></div>;
 }

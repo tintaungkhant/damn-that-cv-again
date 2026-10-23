@@ -41,3 +41,9 @@ Application backup/restore remains Ticket 08. Credentials are never written by t
 - https://ui.shadcn.com/blocks
 
 The shadcn CLI recognized this installed Next.js project and Tailwind v4, initialized the theme, and installed the UI components. Installed Next.js guides for Server Actions, `use server`, `io`, and `revalidatePath` informed the request-time reads and mutation flow.
+
+## Ticket 04 extension
+
+Schema v2 adds `profile_proposals` and a permanent `profile_block_ids` ledger in a sequential transaction, preserving the v1 tables and history. Proposals reference their source user message and chat, so chat deletion removes unsaved proposals but never confirmed profile revisions. An assistant reply and its validated proposal commit atomically only after provider completion. New pending batches supersede previous pending batches in that chat only after successful completion.
+
+Approval recomputes the preview inside `BEGIN IMMEDIATE` and compares the current revision to the revision the user reviewed. Stale operations can reapply only when each existing target (including insertion anchors) is unchanged. Conflicts require reconciliation and a new approval. Undo appends the historical document as a new revision; it does not delete history or release used block IDs. Revisions use SQLite insertion order to resolve equal timestamps deterministically. Public profile records are plain objects for React transport.

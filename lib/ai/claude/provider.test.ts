@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createClaudeProvider } from "./provider.ts";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 
 const request = { instructions: "Career editor", profile: "Known facts", messages: [{ role: "user" as const, content: "Hello" }] };
@@ -35,4 +37,30 @@ test("Claude adapter distinguishes context overflow from login and transport err
     assert.equal(events[0].type, "error");
     if (events[0].type === "error") { assert.equal(events[0].code, code); assert.ok(!events[0].message.includes("private diagnostic")); }
   }
+});
+
+
+test("Claude profile tool validates a whole batch and emits it only after successful completion", async () => {
+  const value = { baseRevision: null, summary: "Initial notes", operations: [{ type: "insert", id: "p-role", afterId: null, content: "## Work\n\nEngineer." }] };
+  const provider = createClaudeProvider(input => ({
+    close() {},
+    async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
+      const server = input.options?.mcpServers?.profile;
+      assert.ok(server && "instance" in server);
+      assert.deepEqual(input.options?.allowedTools, ["mcp__profile__propose_profile_edit"]);
+      const client = new Client({ name: "test", version: "1" });
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      await server.instance.connect(serverTransport);
+      await client.connect(clientTransport);
+      try {
+        const response = await client.callTool({ name: "propose_profile_edit", arguments: value });
+        assert.notEqual(response.isError, true);
+      } finally { await client.close(); await server.instance.close(); }
+      yield { type: "result", subtype: "success", is_error: false, usage: { input_tokens: 1, output_tokens: 2 } } as SDKMessage;
+    },
+  }));
+  const events = [];
+  for await (const event of provider.stream({ ...request, profileRevision: null }, new AbortController().signal)) events.push(event);
+  assert.deepEqual(events.map(event => event.type), ["proposal", "usage", "done"]);
+  assert.deepEqual(events[0], { type: "proposal", kind: "profile", value });
 });

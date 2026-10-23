@@ -150,7 +150,9 @@ export function openStore(path: string) {
           const value = profileProposal.parse(proposal);
           const base = value.baseRevision === null ? emptyProfile : this.getProfileRevisions().find(row => row.id === value.baseRevision)?.markdown;
           if (!base) throw new Error("Proposal base revision not found.");
-          applyProfileOperations(base, value, new Set(db.prepare("SELECT id FROM profile_block_ids").all().map(row => String(row.id))));
+          const stale = (this.getProfileRevisions()[0]?.id ?? null) !== value.baseRevision;
+          const usedIds = stale ? parseProfile(base).map(block => block.id) : this.getProfileBlockIds();
+          applyProfileOperations(base, value, new Set(usedIds));
           db.prepare("UPDATE profile_proposals SET status = 'superseded' WHERE chat_id = ? AND status = 'pending'").run(pending.chat_id);
           db.prepare("INSERT INTO profile_proposals(id, chat_id, message_id, value, status) VALUES (?, ?, ?, ?, 'pending')").run(randomUUID(), pending.chat_id, id, JSON.stringify(value));
         }
@@ -170,6 +172,15 @@ export function openStore(path: string) {
         id: String(row.id), value: profileProposal.parse(JSON.parse(String(row.value))), status: row.status as SavedProposal["status"],
       }));
     },
+    getProfileBlockIds(): string[] {
+      return db.prepare("SELECT id FROM profile_block_ids ORDER BY id").all().map(row => String(row.id));
+    },
+    getProfileWorkspace(id: string) {
+      return {
+        revisions: this.getProfileRevisions(),
+        proposals: this.getProfileProposals(id).map(proposal => ({ ...proposal, preview: proposal.status === "pending" ? this.previewProfileProposal(proposal.id) : null })),
+      };
+    },
     previewProfileProposal(id: string): { revisionId: string | null; before: string; after: string | null; conflict: boolean } {
       const row = db.prepare("SELECT value FROM profile_proposals WHERE id = ? AND status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").get(chatId.parse(id), userId);
       if (!row) throw new Error("Pending proposal not found.");
@@ -181,7 +192,7 @@ export function openStore(path: string) {
       const revisionId = current?.id ?? null;
       if (!base || (revisionId !== proposal.baseRevision && !canReapply(base, before, proposal))) return { revisionId, before, after: null, conflict: true };
       try {
-        const used = new Set(db.prepare("SELECT id FROM profile_block_ids").all().map(row => String(row.id)));
+        const used = new Set(this.getProfileBlockIds());
         return { revisionId, before, after: applyProfileOperations(before, proposal, used), conflict: false };
       } catch { return { revisionId, before, after: null, conflict: true }; }
     },
@@ -196,7 +207,10 @@ export function openStore(path: string) {
         }
         const revisionId = randomUUID();
         db.prepare("INSERT INTO profile_revisions(id, user_id, markdown) VALUES (?, ?, ?)").run(revisionId, userId, preview.after!);
-        for (const block of parseProfile(preview.after!)) db.prepare("INSERT OR IGNORE INTO profile_block_ids(id) VALUES (?)").run(block.id);
+        const proposal = profileProposal.parse(JSON.parse(String(db.prepare("SELECT value FROM profile_proposals WHERE id = ?").get(id)!.value)));
+        const ids = new Set(parseProfile(preview.after!).map(block => block.id));
+        for (const operation of proposal.operations) if (operation.type === "insert") ids.add(operation.id);
+        for (const blockId of ids) db.prepare("INSERT OR IGNORE INTO profile_block_ids(id) VALUES (?)").run(blockId);
         db.prepare("UPDATE profile_proposals SET status = 'approved' WHERE id = ?").run(id);
         db.exec("COMMIT");
         return { approved: true, preview };

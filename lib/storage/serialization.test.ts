@@ -16,3 +16,17 @@ test("saved conversations cross the React transport before and after a reply", a
     assert.deepEqual(store.getMessages(chat.id).map(message => message.content), ["My career notes", "Tell me more."]);
   } finally { store.close(); }
 });
+
+
+test("profile review, proposal previews and revision history cross the React transport", async () => {
+  const store = openStore(":memory:");
+  try {
+    const chat = store.createChat({ category: "profile", title: "Profile" });
+    const turn = store.beginTurn({ chatId: chat.id, content: "Notes" });
+    store.completeTurn(turn.id, "Review", { baseRevision: null, summary: "Notes", operations: [{ type: "insert", id: "p-work", afterId: null, content: "## Work\n\nEngineer." }] });
+    await assert.doesNotReject(() => encodeReply(store.getProfileWorkspace(chat.id)));
+    store.approveProfileProposal(store.getProfileProposals(chat.id)[0].id, null);
+    await assert.doesNotReject(() => encodeReply(store.getProfileWorkspace(chat.id)));
+    assert.equal(store.getProfileWorkspace(chat.id).revisions.length, 1);
+  } finally { store.close(); }
+});

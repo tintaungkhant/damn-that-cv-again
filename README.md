@@ -22,7 +22,7 @@ bun run start
 
 ## Current functionality
 
-Create, reopen, and delete profile or build CV chats. Chats persist across restarts. Build chat deletion asks for confirmation and removes its messages and CV revisions. Deleting a profile chat preserves saved profile history. Plain-text Claude replies stream through Server Actions in both chat categories. Messages survive restarts; failed or interrupted replies offer retry without duplicating the user message. Stop a running reply with **Stop reply**. Profile proposals and structured CV generation remain later tickets.
+Create, reopen, and delete profile or build CV chats. Chats persist across restarts. Build chat deletion asks for confirmation and removes its messages and CV revisions. Deleting a profile chat preserves saved profile history. Plain-text Claude replies stream through Server Actions in both chat categories. Messages survive restarts; failed or interrupted replies offer retry without duplicating the user message. Stop a running reply with **Stop reply**. Career notes become block-based profile proposals through Claude’s `propose_profile_edit` tool. Review the before/after comparison beside chat, then use **Approve whole batch** to save. **Ask for a revision** prepares a message you can edit and send. **History** lets you view and restore a prior profile; restoring adds a revision. Conflicting stale proposals require reconciliation and approval again. Build chats can also propose profile facts; structured CV generation remains Ticket 06.
 
 Run one app server against this database at a time. On app startup, unfinished requests become failed messages ready for retry. Replies have a five-minute safety timeout.
 
@@ -42,6 +42,8 @@ bun run lint
 bun run build
 ```
 
-Tests cover real SQLite persistence, validation, deletion, chat context, streaming, failure, cancellation, retry, and provider error normalization. No browser or visual tests are run, following `.ai/rules/testing.md`.
+Tests cover real SQLite persistence, validation, deletion, chat context, streaming, failure, cancellation, retry, profile proposals, approval, stale revisions, undo, stable block IDs, React transport, and provider error normalization. No browser or visual tests are run, following `.ai/rules/testing.md`.
 
 Transport feasibility and live Server Action checks: `.scratch/v1/streaming/findings.md`. For a visual check, open a chat at http://localhost:3800, send career notes, and check incremental text, Stop reply, and Retry saved message.
+
+Profile verification: `.scratch/v1/profile/findings.md`. To check the UI manually, paste rough notes into a profile chat. The confirmed profile must stay empty until approval. Compare **Before** and **After approval**, ask for a revision, approve, reopen, and try **History → Restore this revision**. If another chat changes a targeted block, refresh the profile and use **Ask to reconcile**. Profile refresh is explicit; another tab does not update automatically.

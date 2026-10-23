@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Document workflows remain later tickets.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Structured CV workflows remain later tickets.
 
 ## Purpose
 
@@ -42,7 +42,7 @@ A profile proposal is a list of operations against a named base revision:
 - `insert` a new block at a stated position
 - `delete` a block by ID
 
-The assistant never rewrites the whole profile. When the base revision is stale, the operations are reapplied to the latest revision if every targeted block is unchanged since the base. Otherwise the assistant reconciles the proposal against the latest revision and presents the result for approval again.
+The assistant never rewrites the whole profile. When the base revision is stale, the operations are reapplied to the latest revision if every targeted block is unchanged since the base. Otherwise the review shows a conflict and **Ask to reconcile** prepares a request to the assistant. Sending it produces a fresh proposal against the latest revision, requiring approval again. If the confirmed revision changes after a comparison was displayed, approval refreshes the comparison and requires another click.
 
 The profile includes an `## Open questions` section listing unresolved contradictions and missing consequential facts. Every chat sees it as part of the profile.
 
@@ -108,7 +108,7 @@ Build the interface with shadcn/ui components on Tailwind CSS.
 
 Show a chat list organized by category. Display the active conversation beside the relevant document.
 
-Profile chats show career Markdown and proposed changes. Build chats show readable CV content and revision review, with raw JSON available separately. This readable document view is not a designed CV template or paginated preview.
+Profile chats show career Markdown and proposed changes beside the conversation. **Ask for a revision** prepares an editable message; it does not send automatically. Profile refresh is explicit, and profiles also refresh after a successful reply or document action. Another tab does not update automatically. Build chats show readable CV content and revision review, with raw JSON available separately. This readable document view is not a designed CV template or paginated preview.
 
 ## Provider
 
@@ -129,7 +129,7 @@ Each user message makes one Agent SDK `query()` call:
 - A custom system prompt replaces the Claude Code default.
 - Built-in Claude Code tools are disabled.
 - Local Claude Code settings and `CLAUDE.md` files are not loaded.
-- Two in-process tools, `propose_profile_edit` and `propose_cv`, carry structured proposals. Their zod input schemas are the proposal and CV contracts.
+- Two in-process tools, `propose_profile_edit` and `propose_cv`, carry structured proposals. Their zod input schemas are the proposal and CV contracts. Ticket 04 enables only `propose_profile_edit`; `propose_cv` follows the approved CV schema in later tickets.
 - Partial messages are enabled so text streams.
 
 ## Backup and restore

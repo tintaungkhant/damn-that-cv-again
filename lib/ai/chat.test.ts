@@ -171,3 +171,82 @@ test("an old stream disconnect cannot fail a newer retry of the same message", a
     assert.deepEqual(store.getMessages(chat.id).map(message => message.content), ["Hello", "Complete"]);
   } finally { releaseOld(); releaseRetry(); store.close(); }
 });
+
+
+test("completed proposals persist without changing facts, and the next turn receives the latest profile and pending review", async () => {
+  const store = openStore(":memory:");
+  const chat = store.createChat({ category: "profile", title: "Notes" });
+  let attempts = 0;
+  const proposal = { baseRevision: null, summary: "Initial notes", operations: [{ type: "insert", id: "p-role", afterId: null, content: "## Work\n\nEngineer." }] };
+  const provider: ChatProvider = { async *stream(request) {
+    attempts++;
+    if (attempts === 2) {
+      assert.equal(request.profileRevision, store.getProfileRevisions()[0].id);
+      assert.equal(request.proposals?.[0].status, "approved");
+    }
+    yield { type: "text-delta", text: "Review before saving." };
+    if (attempts === 1) yield { type: "proposal", kind: "profile", value: proposal };
+    yield { type: "done" };
+  }};
+  try {
+    const service = createChatService(store, provider);
+    const reply = service.send({ chatId: chat.id, content: "Engineer. Organize these notes." });
+    const events = [];
+    const reader = reply.stream.getReader();
+    for (;;) { const item = await reader.read(); if (item.done) break; events.push(item.value); }
+    assert.equal(events.at(-1)?.type, "done");
+    assert.equal(store.getProfileRevisions().length, 0);
+    const saved = store.getProfileProposals(chat.id)[0];
+    assert.deepEqual(saved.value, proposal);
+    store.approveProfileProposal(saved.id, null);
+    const next = service.send({ chatId: chat.id, content: "What next?" }).stream.getReader();
+    while (!(await next.read()).done) {}
+    assert.equal(attempts, 2);
+    assert.equal(store.getMessages(chat.id).length, 4);
+  } finally { store.close(); }
+});
+
+
+test("a failed replacement proposal keeps the previous review and all confirmed facts", async () => {
+  const store = openStore(":memory:");
+  const chat = store.createChat({ category: "profile", title: "Notes" });
+  const value = { baseRevision: null, summary: "Notes", operations: [{ type: "insert", id: "p-role", afterId: null, content: "## Work\n\nEngineer." }] };
+  const turn = store.beginTurn({ chatId: chat.id, content: "Initial notes" });
+  store.completeTurn(turn.id, "Review.", value);
+  const original = store.getProfileProposals(chat.id)[0];
+  const provider: ChatProvider = { async *stream() {
+    yield { type: "proposal", kind: "profile", value: { ...value, summary: "Revised" } };
+    yield { type: "text-delta", text: "Incomplete revision" };
+    throw new Error("Connection lost");
+  }};
+  try {
+    const reply = createChatService(store, provider).send({ chatId: chat.id, content: "Revise this" });
+    const reader = reply.stream.getReader();
+    while (!(await reader.read()).done) {}
+    assert.deepEqual(store.getProfileProposals(chat.id), [original]);
+    assert.equal(store.getMessages(chat.id).at(-1)?.status, "failed");
+    assert.deepEqual(store.getProfileRevisions(), []);
+  } finally { store.close(); }
+});
+
+
+test("interrupting a staged proposal saves neither the proposal nor assistant text", async () => {
+  const store = openStore(":memory:");
+  const chat = store.createChat({ category: "profile", title: "Interrupted" });
+  const provider: ChatProvider = { async *stream(_request, signal) {
+    yield { type: "proposal", kind: "profile", value: { baseRevision: null, summary: "Notes", operations: [{ type: "insert", id: "p-work", afterId: null, content: "Engineer" }] } };
+    yield { type: "text-delta", text: "Partial" };
+    await new Promise<void>(resolve => signal.addEventListener("abort", () => resolve(), { once: true }));
+    yield { type: "done" };
+  }};
+  try {
+    const reply = createChatService(store, provider).send({ chatId: chat.id, content: "Notes" });
+    const reader = reply.stream.getReader();
+    await reader.read();
+    await reader.cancel();
+    assert.deepEqual(store.getProfileProposals(chat.id), []);
+    assert.deepEqual(store.getProfileRevisions(), []);
+    assert.equal(store.getMessages(chat.id).length, 1);
+    assert.equal(store.getMessages(chat.id)[0].status, "failed");
+  } finally { store.close(); }
+});

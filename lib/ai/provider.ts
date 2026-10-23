@@ -1,3 +1,4 @@
+import type { SavedProposal } from "../storage/profile.ts";
 export type ChatEvent =
   | { type: "text-delta"; text: string }
   | { type: "proposal"; kind: "profile" | "cv"; value: unknown }
@@ -7,6 +8,9 @@ export type ChatEvent =
 export type ProviderRequest = {
   instructions: string;
   profile: string;
+  profileRevision?: string | null;
+  usedProfileBlockIds?: string[];
+  proposals?: SavedProposal[];
   messages: { role: "user" | "assistant"; content: string }[];
 };
 export interface ChatProvider {

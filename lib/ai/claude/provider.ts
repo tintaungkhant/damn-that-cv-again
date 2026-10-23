@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { query, type Query } from "@anthropic-ai/claude-agent-sdk";
+import { profileProposal, type ProfileProposal } from "../../storage/profile.ts";
+import { createSdkMcpServer, tool, query, type Query } from "@anthropic-ai/claude-agent-sdk";
 import type { ChatEvent, ChatProvider } from "../provider.ts";
 
 type RunQuery = (input: Parameters<typeof query>[0]) => Pick<Query, typeof Symbol.asyncIterator | "close">;
@@ -17,6 +18,18 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
       const cwd = mkdtempSync(join(tmpdir(), "cv-chat-"));
       let session: ReturnType<RunQuery> | undefined;
       try {
+        let proposal: ProfileProposal | undefined;
+        let invalidProposal = false;
+        const propose = tool("propose_profile_edit", "Propose one batch of profile block operations for explicit user approval. Never saves the confirmed profile.", profileProposal.shape, async args => {
+          const parsed = profileProposal.safeParse(args);
+          if (!parsed.success || proposal || parsed.data.baseRevision !== (request.profileRevision ?? null)) {
+            invalidProposal = true;
+            return { isError: true, content: [{ type: "text", text: "Invalid proposal. Use the provided base revision and one valid batch." }] };
+          }
+          proposal = parsed.data;
+          return { content: [{ type: "text", text: "Proposal staged for review only. It is not approved or saved to the confirmed profile." }] };
+        });
+        const mcp = createSdkMcpServer({ name: "profile", version: "1.0.0", tools: [propose] });
         const env = { ...process.env };
         delete env.ANTHROPIC_API_KEY;
         delete env.ANTHROPIC_AUTH_TOKEN;
@@ -26,12 +39,12 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
         try {
           signal.throwIfAborted();
           session = run({
-            prompt: JSON.stringify({ confirmedProfile: request.profile, conversation: request.messages }),
+            prompt: JSON.stringify({ confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], conversation: request.messages }),
             options: {
               systemPrompt: request.instructions,
               tools: [], settingSources: [], skills: [], title: "cv-chat",
-              strictMcpConfig: true, mcpServers: {}, allowedTools: [],
-              includePartialMessages: true, persistSession: false, maxTurns: 1,
+              strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: ["mcp__profile__propose_profile_edit"],
+              includePartialMessages: true, persistSession: false, maxTurns: 3,
               cwd, env, abortController,
             },
           });
@@ -50,6 +63,10 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
               if (message.is_error || message.subtype !== "success") {
                 yield errorEvent(JSON.stringify(message)); return;
               }
+              if (invalidProposal) {
+                yield { type: "error", code: "validation", message: "Claude returned an invalid profile proposal. Your confirmed profile is unchanged; retry." }; return;
+              }
+              if (proposal) yield { type: "proposal", kind: "profile", value: proposal };
               yield { type: "usage", inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens,
                 cacheReadTokens: message.usage.cache_read_input_tokens ?? 0, cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0 };
               yield { type: "done" };

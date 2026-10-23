@@ -24,8 +24,7 @@ async function Workspace({ searchParams }: { searchParams: Search }) {
   const chats = store.listChats();
   const selectedId = z.uuid().safeParse(params.chat);
   const active = selectedId.success ? store.getChat(selectedId.data) : undefined;
-  const profile = store.getProfileRevisions()[0];
-  return <main className="mx-auto w-full max-w-7xl space-y-8 p-4 sm:p-8">
+  return <main className="mx-auto w-full max-w-[1800px] space-y-8 p-4 sm:p-8">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="text-2xl font-semibold tracking-tight">Your career, in focus</h1>
         <p className="mt-1 text-sm text-muted-foreground">Career notes and tailored CVs, together.</p></div>
@@ -56,10 +55,8 @@ async function Workspace({ searchParams }: { searchParams: Search }) {
             <CardDescription>{active ? (active.category === "profile" ? "Profile chat" : "Build CV chat") : "Create a chat or open one from your list."}</CardDescription></CardHeader>
           <CardContent className="space-y-6">
             {active && <>
-              <Conversation key={active.id} chatId={active.id} initialMessages={store.getMessages(active.id)} />
-              <Separator />
-              <h2 className="font-medium">{active.category === "profile" ? "Saved career profile" : "CV revisions"}</h2>
-              {active.category === "profile" ? <p className="whitespace-pre-wrap text-sm text-muted-foreground">{profile ? String(profile.markdown) : "No saved profile yet. Deleting a profile chat will keep your saved career profile."}</p> : <p className="text-sm text-muted-foreground">{store.getCvRevisions(active.id).length} saved revisions</p>}
+              <Conversation key={active.id} chatId={active.id} initialMessages={store.getMessages(active.id)} initialProfile={store.getProfileWorkspace(active.id)} />
+              {active.category === "build" && <p className="text-sm text-muted-foreground">{store.getCvRevisions(active.id).length} saved CV revisions. Structured CV generation arrives in Ticket #6.</p>}
             </>}
           </CardContent>
         </Card>

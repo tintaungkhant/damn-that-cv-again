@@ -1,6 +1,6 @@
 # 04: Profile chats and proposals
 
-Status: claimed
+Status: resolved
 Blocked by: 03
 
 ## Goal
@@ -19,10 +19,13 @@ The shared career profile, edited only through approved proposals.
 
 ## Acceptance
 
-- [ ] The profile changes only after approval, history is kept, and stale revisions are detected (acceptance condition 2).
-- [ ] A reopened chat uses the latest confirmed profile and no other chat's discussion (acceptance condition 3).
-- [ ] A disputed fact stays unchanged and appears under open questions.
+- [x] The profile changes only after approval, history is kept, and stale revisions are detected (acceptance condition 2).
+- [x] A reopened chat uses the latest confirmed profile and no other chat's discussion (acceptance condition 3).
+- [x] A disputed fact stays unchanged and appears under open questions.
 
 ## Comments
 
 - Storage slice: schema v2 adds durable pending proposals and a block-ID ledger. Approval is transactional, previews detect conflicting stale targets, and undo appends history. Storage behavior checks pass.
+
+- Completed provider tool, career-editor prompt, shared Markdown review beside chat, before/after comparison, whole-batch approval, editable revision/reconciliation requests, history and undo. Build chats can propose profile facts too. Current profile and active-chat-only context are rebuilt each turn.
+- Verified 31 behavior tests, typecheck, lint, production build, live subscription on synthetic data, and isolated HTTP Server Actions including approval, reopen and undo. Evidence and manual visual checklist: .scratch/v1/profile/findings.md. Inline standards/spec review found no remaining issues. Browser and visual checks remain user verification per the testing rule.
