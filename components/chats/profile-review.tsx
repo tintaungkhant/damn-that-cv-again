@@ -1,7 +1,7 @@
 "use client";
 
-import { memo, useState, useTransition } from "react";
-import Markdown from "react-markdown";
+import { useState, useTransition } from "react";
+import { ChatMarkdown as Document } from "./markdown";
 import { approveProfileEdit, readProfileWorkspace, restoreProfile } from "@/app/profile-actions";
 import type { openStore } from "@/lib/storage/store";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 export type ProfileWorkspace = ReturnType<ReturnType<typeof openStore>["getProfileWorkspace"]>;
-const Document = memo(function Document({ text }: { text: string }) {
-  return <div className="space-y-3 wrap-break-word text-sm [&_h1]:text-xl [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:font-medium [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:whitespace-pre-wrap [&_a]:underline [&_pre]:overflow-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-3">
-    <Markdown skipHtml disallowedElements={["img"]}>{text}</Markdown>
-  </div>;
-});
 export function ProfileReview({ chatId, workspace, onChange, onRevise, sending }: {
   chatId: string; workspace: ProfileWorkspace; onChange: (value: ProfileWorkspace) => void; onRevise: (text: string) => void; sending: boolean;
 }) {
