@@ -61,3 +61,11 @@ To check the UI at http://localhost:3800, open a Build CV chat, paste a job desc
 ## CV export verification
 
 Open a Build CV chat at http://localhost:3800 and accept a draft. Under **Accepted CV**, use **Copy JSON**, paste into a text editor, and use **Download JSON** to save the same content as a `.json` file. Check custom sections and omitted fields; neither export should contain evidence or selection notes. Generate a new draft and confirm exports still use the accepted CV. Clipboard access failure offers download instead. Browser interactions and visual checks remain manual under `.ai/rules/testing.md`. Server Action transport checks use synthetic data in `.scratch/v1/export/transport.ts`.
+
+## Fictional trial workspace and model
+
+Ticket 08 (in-app backup/restore) is retired. Ticket 09 pins `claude-sonnet-5-5` after a paired realistic-input trial; automatic SDK compaction is disabled, and unexpected compaction produces a context-limit error rather than silently shortening context. Resolved model information stays in usage events, outside CV exports.
+
+A complete fictional Alex Morgan workspace is installed for manual review: six chats, 61 messages, three profile revisions, four CV revisions, two accepted CVs, a shorter draft, discarded history, one pending profile proposal, and one deliberately failed message for retry. The user's previous test database was archived and verified before replacement with explicit authorization. The archive path is recorded locally in `data/trial-workspaces/install.json`; data and archives remain outside Git.
+
+Follow `docs/trial-guide.md` at http://localhost:3800. Trial measurements and the active acceptance audit are in `.scratch/v1/hardening/findings.md`. Automated checks pass; manual UI/editorial acceptance is still open. Initial discussion history is explicitly labeled synthetic; generated CVs and the pending profile proposal came from live Claude calls.

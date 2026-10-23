@@ -13,7 +13,7 @@ function errorEvent(detail: string): ChatEvent {
   return { type: "error", code: "provider", message: "Claude could not finish. Check your local Claude subscription login, then retry." };
 }
 
-export function createClaudeProvider(run: RunQuery = query, model = "sonnet"): ChatProvider {
+export function createClaudeProvider(run: RunQuery = query, model = "claude-sonnet-5-5"): ChatProvider {
   return {
     async *stream(request, signal) {
       const cwd = mkdtempSync(join(tmpdir(), "cv-chat-"));

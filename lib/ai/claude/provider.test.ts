@@ -111,14 +111,14 @@ test("Claude uses the chosen model explicitly and reports the resolved model wit
     }, model);
     const events = [];
     for await (const event of provider.stream(request, new AbortController().signal)) events.push(event);
-    assert.equal(selected, model ?? "sonnet");
+    assert.equal(selected, model ?? "claude-sonnet-5-5");
     assert.deepEqual(events[0], { type: "usage", inputTokens: 7, outputTokens: 11, cacheReadTokens: 13, cacheWriteTokens: 17, model: "resolved-trial-model" });
   }
 });
 
 
 test("Claude refuses silent compaction instead of returning a shortened-context success", async () => {
-  const provider = createClaudeProvider(input => ({
+  const provider = createClaudeProvider(() => ({
     close() {},
     async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
       yield { type: "system", subtype: "compact_boundary" } as SDKMessage;
