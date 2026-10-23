@@ -8,6 +8,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Project rules
+
+Project rules live in `.ai/rules/`, one Markdown file per topic. They are binding, like this file.
+
+- At the start of every task, list `.ai/rules/` and read every file whose topic touches the task. When unsure whether a file applies, read it.
+- Each rule file starts with a one-line `Applies to:` statement naming the files or work it covers.
+- If a rule conflicts with this file, follow the rule file and point out the conflict.
+
 ## Agent skills
 
 ### Issue tracker
