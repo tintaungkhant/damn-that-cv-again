@@ -18,7 +18,7 @@ export function AppSidebar() {
         <SidebarMenuButton size="lg" asChild tooltip="Home">
           <Link href="/">
             <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"><SparklesIcon className="size-4" /></span>
-            <span className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-medium">CV Builder</span><span className="truncate text-xs text-muted-foreground">Personal workspace</span></span>
+            <span className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-medium">Damn! TCVA</span><span className="truncate text-xs text-muted-foreground">Personal workspace</span></span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem></SidebarMenu>
