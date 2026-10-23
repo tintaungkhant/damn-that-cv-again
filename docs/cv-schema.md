@@ -23,7 +23,7 @@ The single source of truth is `lib/storage/cv.ts` (`cvSchema`, inferred `Cv`, an
 
 Detailed entries deliberately use neutral names: `heading` can be a role, project, degree, certification, or publication. Sections can be omitted, renamed, reordered, or added without a fixed education/projects/skills list. At least one section with content is required; an empty CV is not a draft.
 
-Contact fields and URLs are metadata, outside the claim wrapper. Factual prose belongs in claims, including entry headings and dates. The later generation service must check evidence IDs against the confirmed profile and verify factual support; schema validation alone cannot establish truth. This ticket validates evidence ID syntax and presence, not existence or semantic support.
+Contact fields and URLs are metadata, outside the claim wrapper. Factual prose belongs in claims, including entry headings and dates. Ticket 06 checks evidence IDs against confirmed blocks in the request profile snapshot, excluding Open questions. Career-editor instructions require support for the exact wording; schema and reference validation cannot establish semantic truth. This schema validates ID syntax and presence; the generation service validates existence, and human review checks factual support.
 
 ## Export shape
 

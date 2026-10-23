@@ -1,5 +1,8 @@
 "use client";
 
+import { CvReview, type CvWorkspace } from "./cv-review";
+import { readCvWorkspace } from "@/app/build-actions";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfileReview, type ProfileWorkspace } from "./profile-review";
 import { readProfileWorkspace } from "@/app/profile-actions";
 import { useRef, useState, useTransition } from "react";
@@ -12,7 +15,9 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export function Conversation({ chatId, initialMessages, initialProfile }: { chatId: string; initialMessages: Message[]; initialProfile: ProfileWorkspace }) {
+export function Conversation({ chatId, initialMessages, initialProfile, initialCv }: { chatId: string; initialMessages: Message[]; initialProfile: ProfileWorkspace; initialCv?: CvWorkspace }) {
+  const [cv, setCv] = useState(initialCv);
+  const [documentBusy, setDocumentBusy] = useState(false);
   const [profile, setProfile] = useState(initialProfile);
   const [messages, setMessages] = useState(initialMessages);
   const [content, setContent] = useState("");
@@ -66,14 +71,14 @@ export function Conversation({ chatId, initialMessages, initialProfile }: { chat
         try { setMessages(await readChatMessages(chatId)); } catch { /* Keep the visible conversation during a connection failure. */ }
         if (finished) {
           setPartial("");
-          try { setProfile(await readProfileWorkspace(chatId)); } catch { setError("Reply saved. Refresh to load the profile review."); }
+          try { setProfile(await readProfileWorkspace(chatId)); if (initialCv) setCv(await readCvWorkspace(chatId)); } catch { setError("Reply saved. Refresh to load the document review."); }
         }
       }
     });
   }
 
   return <div className="grid items-start gap-6 lg:grid-cols-2"><div className="min-w-0 space-y-4">
-    {messages.length === 0 && <p className="text-sm text-muted-foreground">Paste career notes or ask for advice to start.</p>}
+    {messages.length === 0 && <p className="text-sm text-muted-foreground">{initialCv ? "Save a job description beside chat, then ask for a tailored draft." : "Paste career notes or ask for advice to start."}</p>}
     {messages.map(message => <MessageRow key={message.id} align={message.role === "user" ? "end" : "start"}>
       <MessageContent>
         <MessageHeader>{message.role === "user" ? "You" : "Assistant"}</MessageHeader>
@@ -91,14 +96,17 @@ export function Conversation({ chatId, initialMessages, initialProfile }: { chat
       if (storedPending) startTransition(() => stop(latest.id));
       else send(latest.id);
     }}>{storedPending ? "Stop interrupted reply" : "Retry saved message"}</Button>}
-    <form className="space-y-2" onSubmit={event => { event.preventDefault(); if (!pending && !needsRetry && !storedPending && content.trim()) send(); }}>
+    <form className="space-y-2" onSubmit={event => { event.preventDefault(); if (!pending && !documentBusy && !needsRetry && !storedPending && content.trim()) send(); }}>
       <Label htmlFor={`message-${chatId}`}>Message</Label>
-      <Textarea id={`message-${chatId}`} value={content} onChange={event => setContent(event.target.value)} maxLength={100000} required disabled={pending || needsRetry || storedPending} placeholder="Tell me about your experience…" />
-      <Button type="submit" disabled={pending || needsRetry || storedPending || !content.trim()}>{pending ? "Replying…" : "Send message"}</Button>
+      <Textarea id={`message-${chatId}`} value={content} onChange={event => setContent(event.target.value)} maxLength={100000} required disabled={pending || documentBusy || needsRetry || storedPending} placeholder={initialCv ? "Ask for a draft, discuss selections, or request changes…" : "Tell me about your experience…"} />
+      <Button type="submit" disabled={pending || documentBusy || needsRetry || storedPending || !content.trim()}>{pending ? "Replying…" : "Send message"}</Button>
       {pending && <Button type="button" variant="outline" onClick={() => {
         const id = active.current;
         if (id) startTransition(() => stop(id));
       }}>Stop reply</Button>}
     </form>
-  </div><ProfileReview chatId={chatId} workspace={profile} onChange={setProfile} onRevise={setContent} sending={pending || !!needsRetry || !!storedPending} /></div>;
+  </div><div className="min-w-0">{cv ? <Tabs defaultValue="cv"><TabsList><TabsTrigger value="cv">CV workspace</TabsTrigger><TabsTrigger value="profile">Career profile ({profile.proposals.filter(item => item.status === "pending").length} pending)</TabsTrigger></TabsList>
+    <TabsContent value="cv"><CvReview chatId={chatId} workspace={cv} onChange={setCv} onRevise={setContent} sending={pending || documentBusy || !!storedPending} onBusyChange={setDocumentBusy} currentProfileId={profile.revisions[0]?.id ?? null} /></TabsContent>
+    <TabsContent value="profile"><ProfileReview chatId={chatId} workspace={profile} onChange={setProfile} onRevise={setContent} sending={pending || documentBusy || !!storedPending} /></TabsContent>
+  </Tabs> : <ProfileReview chatId={chatId} workspace={profile} onChange={setProfile} onRevise={setContent} sending={pending || !!storedPending} />}</div></div>;
 }

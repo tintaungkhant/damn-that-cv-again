@@ -1,6 +1,6 @@
 # 06: Build CV chats
 
-Status: claimed
+Status: resolved
 Blocked by: 04, 05
 
 ## Goal
@@ -21,11 +21,13 @@ Tailor a CV to a pasted job description.
 
 ## Acceptance
 
-- [ ] Tailors to a pasted job description and explains selections without invented facts (acceptance condition 4).
-- [ ] Drafts persist independently of acceptance. Accepted CVs survive profile changes and discarded proposals (acceptance condition 5).
+- [x] Tailors to a pasted job description and explains selections without invented facts (acceptance condition 4).
+- [x] Drafts persist independently of acceptance. Accepted CVs survive profile changes and discarded proposals (acceptance condition 5).
 
 ## Comments
 
 2026-10-23: Storage slice adds schema v3, per-chat job settings, automatic draft persistence, accepted pointers, discard, restore-as-draft, profile snapshot references, and evidence checks. Tests cover migration, restart, stale actions, rollback, isolation, and deletion. Provider and UI work remain.
 
 2026-10-23: Provider/service slice enables `propose_cv` only in build requests, supplies saved job context and active/accepted CVs, buffers both proposal kinds, and commits them only on successful completion. Evidence is checked against the request snapshot. Server Actions validate job settings and revision mutations. Failure tests preserve accepted content and reject incomplete, duplicate, or unconfirmed claims. UI remains in progress.
+
+2026-10-23: Complete. Build review UI supports saved job details, readable/JSON views, separate accepted CV and draft review, discard, and history restoration as a new draft. All 49 behavior tests, typecheck, lint and production build passed. Real Claude and isolated HTTP Server Action checks passed on synthetic data; see `.scratch/v1/build/findings.md`, `live.ts`, and `transport.ts`. Inline standards/spec review has no outstanding findings. Visual layout and factual wording checks remain manual under the testing rule. Copy/download remains Ticket 07.

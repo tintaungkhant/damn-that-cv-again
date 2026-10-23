@@ -95,3 +95,24 @@ test("a CV uses its request's profile snapshot even if another chat updates the 
     assert.notEqual(store.getProfileRevisions()[0].id, original.id);
   } finally { store.close(); }
 });
+
+test("a failed CV request can be corrected through saved job details and retried without duplicating its message", async () => {
+  const { store, chat } = setup();
+  const provider: ChatProvider = { async *stream() {
+    yield { type: "text-delta", text: "Queue work matches this role; alternative: concise summary." };
+    yield { type: "proposal", kind: "cv", value: cv };
+    yield { type: "done" };
+  }};
+  try {
+    store.updateBuildSettings(chat.id, { jobDescription: "", targetRole: "", targetCompany: "", projectLimit: 5 }, 1);
+    const service = createChatService(store, provider);
+    const first = service.send({ chatId: chat.id, content: "Generate for saved job" });
+    const failed = await drain(first.stream);
+    assert.equal(failed.at(-1)?.type, "error");
+    store.updateBuildSettings(chat.id, { jobDescription: "TypeScript queue engineer", targetRole: "", targetCompany: "", projectLimit: 1 }, 2);
+    const retried = await drain(service.send({ chatId: chat.id, retryId: first.messageId }).stream);
+    assert.equal(retried.at(-1)?.type, "done");
+    assert.equal(store.getMessages(chat.id).length, 2);
+    assert.equal(store.getCvWorkspace(chat.id).revisions.length, 1);
+  } finally { store.close(); }
+});

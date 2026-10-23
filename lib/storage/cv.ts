@@ -8,6 +8,7 @@ const claim = z.object({
 const link = z.object({ label: text.optional(), url: z.url({ protocol: /^https?$/ }) }).strict();
 
 // Proposed Ticket 05 contract; generation remains blocked on user approval.
+// User approved this contract on 2026-10-23; Ticket 06 now uses it unchanged.
 export const cvSchema = z.object({
   schemaVersion: z.literal(1),
   contact: z.object({

@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Structured CV workflows remain later tickets.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Ticket 05 defines the approved CV contract. Ticket 06 implements saved job details, tailored CV drafts, explicit acceptance, discard, history, restoration, readable/JSON views, and selection notes. Copy/download export remains Ticket 07.
 
 ## Purpose
 
@@ -56,7 +56,7 @@ Ask about consequential gaps, but do not block a useful draft because optional i
 
 Save generated CV drafts automatically. Acceptance marks a revision ready for export. Keep the last accepted revision available while discussing a new proposal; discarding a proposal must not replace the accepted CV. Preserve revision history and allow restoration of an earlier version.
 
-Existing CV revisions remain unchanged when the profile changes. Refresh them only on request. Deleting a build chat removes its messages and CV revisions after confirmation.
+Existing CV revisions remain unchanged when the profile changes. Refresh them only on request. Each revision records the profile snapshot it used. Restore appends a new draft copied from history and requires explicit acceptance; it never replaces the accepted CV automatically. Job settings use a version check, and CV mutations compare the accepted revision the user reviewed. Settings and CV mutations wait until active replies finish. Deleting a build chat removes its job details, messages, and CV revisions after confirmation.
 
 ## Assistant behavior
 
@@ -108,7 +108,7 @@ Build the interface with shadcn/ui components on Tailwind CSS.
 
 Show a chat list organized by category. Display the active conversation beside the relevant document.
 
-Profile chats show career Markdown and proposed changes beside the conversation. **Ask for a revision** prepares an editable message; it does not send automatically. Profile refresh is explicit, and profiles also refresh after a successful reply or document action. Another tab does not update automatically. Build chats show readable CV content and revision review, with raw JSON available separately. This readable document view is not a designed CV template or paginated preview.
+Profile chats show career Markdown and proposed changes beside the conversation. **Ask for a revision** prepares an editable message; it does not send automatically. Profile refresh is explicit, and profiles also refresh after a successful reply or document action. Another tab does not update automatically. Build chats show saved job-description/target/project-limit fields, an always-visible accepted CV, and draft/history review. Each revision has readable and raw JSON tabs. **Prepare draft request** fills the editable composer; **Send message** runs generation. Selection notes are stored outside CV JSON. Workspace refresh is explicit and also follows completed replies and document actions. This readable document view is not a designed CV template or paginated preview.
 
 ## Provider
 

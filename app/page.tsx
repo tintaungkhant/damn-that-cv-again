@@ -55,8 +55,7 @@ async function Workspace({ searchParams }: { searchParams: Search }) {
             <CardDescription>{active ? (active.category === "profile" ? "Profile chat" : "Build CV chat") : "Create a chat or open one from your list."}</CardDescription></CardHeader>
           <CardContent className="space-y-6">
             {active && <>
-              <Conversation key={active.id} chatId={active.id} initialMessages={store.getMessages(active.id)} initialProfile={store.getProfileWorkspace(active.id)} />
-              {active.category === "build" && <p className="text-sm text-muted-foreground">{store.getCvRevisions(active.id).length} saved CV revisions. Structured CV generation arrives in Ticket #6.</p>}
+              <Conversation key={active.id} chatId={active.id} initialMessages={store.getMessages(active.id)} initialProfile={store.getProfileWorkspace(active.id)} initialCv={active.category === "build" ? store.getCvWorkspace(active.id) : undefined} />
             </>}
           </CardContent>
         </Card>

@@ -55,7 +55,7 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
               systemPrompt: request.instructions,
               tools: [], settingSources: [], skills: [], title: "cv-chat",
               strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: request.build ? ["mcp__profile__propose_profile_edit", "mcp__profile__propose_cv"] : ["mcp__profile__propose_profile_edit"],
-              includePartialMessages: true, persistSession: false, maxTurns: 4,
+              includePartialMessages: true, persistSession: false, maxTurns: request.build ? 4 : 3,
               cwd, env, abortController,
             },
           });
