@@ -28,7 +28,7 @@ Run one app server against this database at a time. On app startup, unfinished r
 
 Claude uses the local Claude subscription login, with API-key variables removed from its child environment. Sign in locally with Claude Code before sending a message. Subscription and context limits produce separate errors.
 
-SQLite initializes and seeds the stable local user on first use. Data lives in `data/app.sqlite`; keep the entire `data/` directory out of Git. Stop the app before manually copying database files, including any WAL files. In-app backup and restore will arrive in Ticket 08. Credentials do not belong in the database.
+SQLite initializes and seeds the stable local user on first use. Data lives in `data/app.sqlite`; keep the entire `data/` directory out of Git. Stop the app before manually copying database files, including any WAL files. In-app backup and restore was retired by user decision (Ticket 08). Credentials do not belong in the database.
 
 Storage and migration decisions: `docs/adr/0001-local-sqlite.md`.
 Product scope: `docs/product-spec.md`. Tickets: `.scratch/v1/issues/`.

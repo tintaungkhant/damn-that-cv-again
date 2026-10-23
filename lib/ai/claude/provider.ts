@@ -13,7 +13,7 @@ function errorEvent(detail: string): ChatEvent {
   return { type: "error", code: "provider", message: "Claude could not finish. Check your local Claude subscription login, then retry." };
 }
 
-export function createClaudeProvider(run: RunQuery = query): ChatProvider {
+export function createClaudeProvider(run: RunQuery = query, model = "sonnet"): ChatProvider {
   return {
     async *stream(request, signal) {
       const cwd = mkdtempSync(join(tmpdir(), "cv-chat-"));
@@ -52,8 +52,8 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
           session = run({
             prompt: JSON.stringify({ confirmedProfile: request.profile, profileRevision: request.profileRevision ?? null, usedProfileBlockIds: request.usedProfileBlockIds ?? [], proposals: request.proposals ?? [], ...(request.build ? { build: request.build } : {}), conversation: request.messages }),
             options: {
-              systemPrompt: request.instructions,
-              tools: [], settingSources: [], skills: [], title: "cv-chat",
+              systemPrompt: request.instructions, model,
+              tools: [], settingSources: [], settings: { autoCompactEnabled: false }, skills: [], title: "cv-chat",
               strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: request.build ? ["mcp__profile__propose_profile_edit", "mcp__profile__propose_cv"] : ["mcp__profile__propose_profile_edit"],
               includePartialMessages: true, persistSession: false, maxTurns: request.build ? 4 : 3,
               cwd, env, abortController,
@@ -61,6 +61,9 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
           });
           for await (const message of session) {
             signal.throwIfAborted();
+            if (message.type === "system" && message.subtype === "compact_boundary") {
+              yield errorEvent("context limit"); return;
+            }
             if (message.type === "rate_limit_event" && message.rate_limit_info.status === "rejected") {
               yield errorEvent("rate_limit"); return;
             }
@@ -80,7 +83,8 @@ export function createClaudeProvider(run: RunQuery = query): ChatProvider {
               if (proposal) yield { type: "proposal", kind: "profile", value: proposal };
               if (cv) yield { type: "proposal", kind: "cv", value: cv };
               yield { type: "usage", inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens,
-                cacheReadTokens: message.usage.cache_read_input_tokens ?? 0, cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0 };
+                cacheReadTokens: message.usage.cache_read_input_tokens ?? 0, cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
+                ...(message.modelUsage ? { model: Object.keys(message.modelUsage).join(", ") } : {}) };
               yield { type: "done" };
               return;
             }

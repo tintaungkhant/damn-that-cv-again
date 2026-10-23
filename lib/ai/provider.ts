@@ -3,7 +3,7 @@ import type { BuildSettings, CvRevision } from "../storage/build.ts";
 export type ChatEvent =
   | { type: "text-delta"; text: string }
   | { type: "proposal"; kind: "profile" | "cv"; value: unknown }
-  | { type: "usage"; inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number }
+  | { type: "usage"; inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number; model?: string }
   | { type: "error"; code: "rate-limit" | "context-limit" | "interrupted" | "provider" | "validation"; message: string }
   | { type: "done" };
 export type ProviderRequest = {

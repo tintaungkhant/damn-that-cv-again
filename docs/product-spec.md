@@ -77,7 +77,7 @@ SQLite owns application history and documents independently of provider sessions
 
 Each new message uses the latest confirmed profile, including in reopened chats. Unsaved discussions remain in their original chat. Requests include instructions, the current profile, active chat history, the current CV draft where relevant, and the new message. Do not include every chat's history.
 
-Begin with full context rather than retrieval, embeddings, or a vector database. Measure input usage and detect provider context limits. If a request exceeds limits, surface an actionable error rather than silently dropping career facts. More elaborate context management is deferred until needed.
+Begin with full context rather than retrieval, embeddings, or a vector database. Measure input usage and detect provider context limits. Automatic SDK compaction is disabled. If a request exceeds limits or the SDK reports a compact boundary, surface an actionable error rather than silently dropping career facts. More elaborate context management is deferred until needed.
 
 ### Streaming and failure handling
 

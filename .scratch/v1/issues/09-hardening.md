@@ -20,3 +20,5 @@ Check every acceptance condition end to end and choose the model.
 - [ ] The model choice and trial results are recorded.
 
 ## Comments
+
+- Hardening slice: explicitly select the trial model (initial candidate Sonnet); include resolved model in usage events; disable automatic context compaction and reject any compact-boundary event as a context-limit error. Provider tests reproduce the previous silent-compaction behavior and pass after the fix. Live model comparison and manual dataset preparation are in progress.

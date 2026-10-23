@@ -15,6 +15,7 @@ test("Claude adapter exposes subscription limits without leaking provider diagno
     assert.deepEqual(input.options?.tools, []);
     assert.deepEqual(input.options?.settingSources, []);
     assert.equal(input.options?.persistSession, false);
+    assert.deepEqual(input.options?.settings, { autoCompactEnabled: false });
     return {
       close() { closed = true; },
       async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
@@ -91,4 +92,40 @@ test("Claude exposes the approved CV tool only for build chats and stages valid 
   for await (const event of provider.stream({ ...request, build: { settings: { jobDescription: "Build services", targetRole: "", targetCompany: "", projectLimit: 3 }, draft: null, accepted: null } }, new AbortController().signal)) events.push(event);
   assert.deepEqual(events[0], { type: "proposal", kind: "cv", value });
   assert.equal(events.at(-1)?.type, "done");
+});
+
+
+test("Claude uses the chosen model explicitly and reports the resolved model with token usage", async () => {
+  for (const model of [undefined, "haiku"]) {
+    let selected: string | undefined;
+    const provider = createClaudeProvider(input => {
+      selected = input.options?.model;
+      return {
+        close() {},
+        async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
+          yield { type: "result", subtype: "success", is_error: false,
+            usage: { input_tokens: 7, output_tokens: 11, cache_read_input_tokens: 13, cache_creation_input_tokens: 17 },
+            modelUsage: { "resolved-trial-model": {} } } as unknown as SDKMessage;
+        },
+      };
+    }, model);
+    const events = [];
+    for await (const event of provider.stream(request, new AbortController().signal)) events.push(event);
+    assert.equal(selected, model ?? "sonnet");
+    assert.deepEqual(events[0], { type: "usage", inputTokens: 7, outputTokens: 11, cacheReadTokens: 13, cacheWriteTokens: 17, model: "resolved-trial-model" });
+  }
+});
+
+
+test("Claude refuses silent compaction instead of returning a shortened-context success", async () => {
+  const provider = createClaudeProvider(input => ({
+    close() {},
+    async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
+      yield { type: "system", subtype: "compact_boundary" } as SDKMessage;
+      yield { type: "result", subtype: "success", is_error: false, usage: { input_tokens: 1, output_tokens: 2 } } as SDKMessage;
+    },
+  }));
+  const events = [];
+  for await (const event of provider.stream(request, new AbortController().signal)) events.push(event);
+  assert.deepEqual(events.map(event => event.type === "error" ? event.code : event.type), ["context-limit"]);
 });
