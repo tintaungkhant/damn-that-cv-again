@@ -19,3 +19,7 @@ export async function changeCvRevision(input: unknown) {
   store.changeCvRevision(parsed);
   return store.getCvWorkspace(parsed.chatId);
 }
+
+export async function exportAcceptedCv(input: unknown) {
+  return getStore().exportAcceptedCv(input);
+}

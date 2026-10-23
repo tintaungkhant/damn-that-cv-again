@@ -6,7 +6,7 @@ import { z } from "zod";
 import { profileProposal, emptyProfile, applyProfileOperations, canReapply, parseProfile, type SavedProposal, type ProfileRevision } from "./profile.ts";
 
 import { buildSettings, defaultBuildSettings, cvRevisionAction, validateCvEvidence, type CvRevision } from "./build.ts";
-import { cvSchema } from "./cv.ts";
+import { cvSchema, exportCv } from "./cv.ts";
 
 export const chatInput = z.object({
   category: z.enum(["profile", "build"]),
@@ -197,6 +197,15 @@ export function openStore(path: string) {
         profileRevision: row.profile_revision === null ? null : String(row.profile_revision), explanation: String(row.explanation),
       }));
       return { settings: buildSettings.parse(JSON.parse(String(context.settings))), version: Number(context.version), acceptedId: context.accepted_revision === null ? null : String(context.accepted_revision), revisions };
+    },
+    exportAcceptedCv(input: unknown) {
+      const { chatId, revisionId } = z.object({ chatId: z.uuid(), revisionId: z.uuid() }).strict().parse(input);
+      if (this.getChat(chatId)?.category !== "build") throw new Error("Build chat not found.");
+      const revision = db.prepare(`SELECT r.content FROM build_context b JOIN cv_revisions r
+        ON r.id = b.accepted_revision AND r.chat_id = b.chat_id
+        WHERE b.chat_id = ? AND r.id = ? AND r.status = 'accepted'`).get(chatId, revisionId);
+      if (!revision) throw new Error("Current accepted CV changed or is missing. Refresh the CV workspace.");
+      return exportCv(JSON.parse(String(revision.content)));
     },
     updateBuildSettings(id: string, input: unknown, expectedVersion: number) {
       const settings = buildSettings.parse(input);

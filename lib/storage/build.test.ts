@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -121,4 +121,51 @@ test("v2 migration, reopen, profile changes and chat deletion preserve independe
     assert.throws(() => store.getCvWorkspace(chat.id), /not found/);
     assert.equal(store.getProfileRevisions().length, 2);
   } finally { store.close(); rmSync(folder, { recursive: true, force: true }); }
+});
+
+
+test("export requires the current accepted CV and excludes private revision data", () => {
+  const store = openStore(":memory:");
+  try {
+    const { chat, profileRevision } = setup(store);
+    const first = draft(store, chat.id, profileRevision);
+    assert.throws(() => store.exportAcceptedCv({ chatId: chat.id, revisionId: first.id }), /accepted/);
+    store.changeCvRevision({ chatId: chat.id, revisionId: first.id, action: "accept", expectedAcceptedId: null });
+    const second = draft(store, chat.id, profileRevision);
+    assert.deepEqual(JSON.parse(store.exportAcceptedCv({ chatId: chat.id, revisionId: first.id })), {
+      schemaVersion: 1, sections: [{ type: "text", title: "Summary", content: { text: "Engineer building queues" } }],
+    });
+    assert.throws(() => store.exportAcceptedCv({ chatId: chat.id, revisionId: second.id }), /accepted/);
+    store.changeCvRevision({ chatId: chat.id, revisionId: second.id, action: "accept", expectedAcceptedId: first.id });
+    assert.throws(() => store.exportAcceptedCv({ chatId: chat.id, revisionId: first.id }), /accepted/);
+    const other = store.createChat({ category: "build", title: "Other" });
+    assert.throws(() => store.exportAcceptedCv({ chatId: other.id, revisionId: second.id }), /accepted/);
+    assert.throws(() => store.exportAcceptedCv({ chatId: chat.id, revisionId: second.id, credentials: "secret" }));
+    assert.throws(() => store.exportAcceptedCv({ chatId: "bad", revisionId: second.id }));
+    store.deleteChat(chat.id, true);
+    assert.throws(() => store.exportAcceptedCv({ chatId: chat.id, revisionId: second.id }), /not found/);
+  } finally { store.close(); }
+});
+
+
+test("accepted export preserves optional and custom sections for copy and JSON files", async () => {
+  const store = openStore(":memory:");
+  try {
+    const { chat, profileRevision } = setup(store);
+    const content = JSON.parse(readFileSync(new URL("../../docs/examples/cv/custom.json", import.meta.url), "utf8"),
+      (key, value) => key === "evidence" ? ["p-role"] : value);
+    const turn = store.beginTurn({ chatId: chat.id, content: "Custom CV" });
+    store.completeTurn(turn.id, "Private selection notes", undefined, { value: content, profileRevision });
+    const revision = store.getCvWorkspace(chat.id).revisions[0];
+    store.changeCvRevision({ chatId: chat.id, revisionId: revision.id, action: "accept", expectedAcceptedId: null });
+    const json = store.exportAcceptedCv({ chatId: chat.id, revisionId: revision.id });
+    const file = new Blob([json], { type: "application/json" });
+    assert.equal(await file.text(), json);
+    const result = JSON.parse(json);
+    assert.deepEqual(result.sections.map((section: { title: string }) => section.title), ["About", "Selected tools", "Selected contributions"]);
+    assert.equal(result.contact.email, "alex@example.com");
+    assert.deepEqual(result.sections[2].entries[1], { heading: { text: "Independent research" } });
+    assert.deepEqual(result.sections[2].entries[0].period, { text: "2020–2022" });
+    assert.equal(/evidence|Private selection notes|profileRevision|explanation/.test(json), false);
+  } finally { store.close(); }
 });

@@ -1,6 +1,6 @@
 # 07: CV JSON export
 
-Status: needs-triage
+Status: claimed
 Blocked by: 06
 
 ## Goal
@@ -17,3 +17,5 @@ Get an accepted CV out of the app.
 - [ ] Optional and custom sections export as valid JSON through copy and download (acceptance condition 6).
 
 ## Comments
+
+- Storage slice: `exportAcceptedCv` validates input, selects only the current accepted revision in its build chat, and reuses the approved evidence-free serializer. Storage tests cover stale/draft/wrong-chat rejection and custom/optional content. Server Action added; UI follows.
