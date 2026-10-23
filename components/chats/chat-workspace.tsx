@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import type { Layout, PanelImperativeHandle } from "react-resizable-panels";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { ArrowUpIcon, CheckIcon, CopyIcon, FileTextIcon, PanelRightIcon, RefreshCwIcon, RotateCcwIcon, SparklesIcon, SquareIcon, TriangleAlertIcon, UserRoundIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, CopyIcon, FileTextIcon, PanelRightCloseIcon, PanelRightIcon, PanelRightOpenIcon, RefreshCwIcon, RotateCcwIcon, SparklesIcon, SquareIcon, TriangleAlertIcon, UserRoundIcon } from "lucide-react";
 import { sendChatMessage, cancelChatReply, readChatMessages } from "@/app/chat-actions";
 import { readCvWorkspace } from "@/app/build-actions";
 import { readProfileWorkspace } from "@/app/profile-actions";
@@ -12,6 +13,7 @@ import type { ChatEvent } from "@/lib/ai/provider";
 import { ChatMarkdown } from "./markdown";
 import { AttachmentPicker, SavedAttachments } from "./attachments";
 import { selectionError } from "@/lib/attachments/types";
+import { readWorkspacePreference, workspacePreferenceKey, workspaceSize } from "@/lib/workspace-preference";
 import { CvAccepted, CvDraft, CvHistory, JobDetails, type CvWorkspace } from "./cv-review";
 import { ConfirmedProfile, ProfileHistory, ProfileProposals, type ProfileWorkspace } from "./profile-review";
 import { PageHeader } from "@/components/page-header";
@@ -35,6 +37,11 @@ import { MessageScrollerProvider, MessageScroller, MessageScrollerViewport, Mess
 
 type Usage = Extract<ChatEvent, { type: "usage" }>;
 type Tab = "job" | "draft" | "accepted" | "history" | "changes" | "profile";
+
+function storedWorkspace() {
+  try { return readWorkspacePreference(localStorage.getItem(workspacePreferenceKey)); }
+  catch { return readWorkspacePreference(null); }
+}
 
 function initialTab(cv: CvWorkspace | undefined, profile: ProfileWorkspace): Tab {
   if (cv?.revisions.some(item => item.status === "draft")) return "draft";
@@ -83,6 +90,10 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
   const [pending, startTransition] = useTransition();
   const [refreshing, startRefresh] = useTransition();
   const wide = useMediaQuery("(min-width: 1024px)", true);
+  const [workspaceHandle, setWorkspaceHandle] = useState<PanelImperativeHandle | null>(null);
+  const [workspaceOpen, setWorkspaceOpen] = useState(true);
+  // The group reports its default layout on mount; ignore it until the saved preference is applied.
+  const restored = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const active = useRef<string | null>(null);
@@ -97,9 +108,27 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
     ? ["Draft a CV for the saved job description.", "Explain which experience best matches this role."]
     : ["Help me organize my career notes.", "What information is missing from my profile?"];
 
+  useEffect(() => {
+    restored.current = false;
+    if (!wide || !workspaceHandle) return;
+    const preference = storedWorkspace();
+    restored.current = true;
+    if (preference.open) workspaceHandle.resize(`${preference.size}%`);
+    else workspaceHandle.collapse();
+  }, [wide, workspaceHandle]);
+  function saveLayout(layout: Layout) {
+    if (!restored.current) return;
+    const size = layout.workspace ?? 0;
+    setWorkspaceOpen(size > 0);
+    try { localStorage.setItem(workspacePreferenceKey, JSON.stringify({ open: size > 0, size: size > 0 ? size : storedWorkspace().size })); } catch { /* Preference is a convenience only. */ }
+  }
+  function showWorkspace() {
+    workspaceHandle?.resize(`${storedWorkspace().size}%`);
+  }
   function review(next: Tab) {
     setTab(next);
     if (!wide) setSheetOpen(true);
+    else showWorkspace();
   }
   function revise(text: string) {
     setContent(text);
@@ -166,7 +195,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
           if (proposed.length > 0) {
             const next = proposed.includes("cv") ? "draft" : "changes";
             setTab(next);
-            if (!wide) toast(next === "draft" ? "CV draft ready for review" : "Profile changes need your approval", { action: { label: "Review", onClick: () => setSheetOpen(true) } });
+            if (!wide || !workspaceOpen) toast(next === "draft" ? "CV draft ready for review" : "Profile changes need your approval", { action: { label: "Review", onClick: () => review(next) } });
           }
         }
       }
@@ -299,12 +328,18 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
       {status}
       <Badge variant="secondary" className="hidden sm:inline-flex">{build ? "Build CV" : "Profile"}</Badge>
       {!wide && <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}><PanelRightIcon />Workspace{attention.length > 0 && <Badge className="h-4 min-w-4 px-1">{attention.length}</Badge>}</Button>}
+      {wide && <Button variant="outline" size="sm" aria-controls="chat-workspace" aria-expanded={workspaceOpen} onClick={() => workspaceOpen ? workspaceHandle?.collapse() : showWorkspace()}>
+        {workspaceOpen ? <><PanelRightCloseIcon />Hide workspace</> : <><PanelRightOpenIcon />Show workspace{attention.length > 0 && <Badge className="h-4 min-w-4 px-1">{attention.length}</Badge>}</>}
+      </Button>}
     </PageHeader>
     <div className="min-h-0 flex-1">
-      {wide ? <ResizablePanelGroup orientation="horizontal">
-        <ResizablePanel defaultSize="55" minSize="35">{thread}</ResizablePanel>
+      {wide ? <ResizablePanelGroup orientation="horizontal" onLayoutChanged={saveLayout}>
+        <ResizablePanel id="thread" defaultSize={`${100 - workspaceSize.default}`} minSize={`${100 - workspaceSize.max}`}>{thread}</ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize="45" minSize="30"><aside aria-label={build ? "CV workspace" : "Career profile"} className="h-full bg-muted/20">{workspacePanel}</aside></ResizablePanel>
+        {/* Collapsing keeps the panel mounted so unsaved job settings and tab state survive hide/show. */}
+        <ResizablePanel id="workspace" panelRef={setWorkspaceHandle} collapsible defaultSize={`${workspaceSize.default}`} minSize={`${workspaceSize.min}`}>
+          <aside id="chat-workspace" aria-label={build ? "CV workspace" : "Career profile"} inert={!workspaceOpen} className="h-full bg-muted/20">{workspacePanel}</aside>
+        </ResizablePanel>
       </ResizablePanelGroup> : thread}
     </div>
     {!wide && <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

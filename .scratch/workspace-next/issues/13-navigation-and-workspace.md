@@ -13,14 +13,15 @@ Implement [navigation and panel scope](../spec.md#navigation-and-document-panel)
 
 ## Acceptance
 
-- [ ] Storage tests cover 50 build and 70 profile chats, stable pagination, old search matches, category isolation, and deletion.
-- [ ] Sidebar query fetches at most five recent chats per category; full list queries are bounded.
-- [ ] Direct chat links and existing create/delete behavior remain compatible.
+- [x] Storage tests cover 50 build and 70 profile chats, stable pagination, old search matches, category isolation, and deletion.
+- [x] Sidebar query fetches at most five recent chats per category; full list queries are bounded.
+- [x] Direct chat links and existing create/delete behavior remain compatible.
 - [ ] User checks sidebar collapse, category navigation, Jobs access, and older-chat discovery.
 - [ ] User checks hide/show, restored width/tab, reload preferences, unsaved fields, review reopening, and mobile Sheet access.
-- [ ] Nonvisual behavior tests, typecheck, lint, build, and synchronized docs pass; no agent browser tests run.
+- [x] Nonvisual behavior tests, typecheck, lint, build, and synchronized docs pass; no agent browser tests run.
 
 ## Comments
 
 - 2026-10-23: Planned. Visual acceptance belongs to the user under `.ai/rules/testing.md`.
 - 2026-10-23: Ticket 12 implemented Jobs navigation and application tracking. Reuse the existing Jobs sidebar link while bounding chat navigation; do not add a second Jobs entry.
+- 2026-10-23: Implemented. Schema v6 adds chat activity time; `listChats` pages, searches, and limits in SQL (`lib/storage/store.ts`). `/chats?category=` pages, primary CV/Profile chat links, and five recent chats per category with **View all** (`app/chats/page.tsx`, `components/app-sidebar.tsx`). Desktop hide/show uses a collapsible Resizable panel with a validated local preference (`lib/workspace-preference.ts`, `components/chats/chat-workspace.tsx`). Tests, typecheck, lint, and build pass. User-run visual checks: `docs/navigation-checks.md`; the two user acceptance boxes stay open until the user confirms.

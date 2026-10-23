@@ -1,6 +1,6 @@
 # Workspace next: attachments, applications, and navigation
 
-Status: Planned on 2026-10-23 from the user's requested follow-up to Tickets 01–09. Ticket 10 feasibility is complete. Ticket 11 attachments are implemented, including validated upload/download actions and chat controls; manual UI acceptance remains user-run. Jobs and navigation remain planned.
+Status: Planned on 2026-10-23 from the user's requested follow-up to Tickets 01–09. Ticket 10 feasibility is complete. Ticket 11 attachments are implemented, including validated upload/download actions and chat controls; manual UI acceptance remains user-run. Ticket 12 jobs and Ticket 13 navigation/workspace are implemented; their manual UI acceptance remains user-run.
 
 Implementation tickets continue at 10 in `issues/`. `docs/product-spec.md` remains the product scope source. Attachment scope describes implemented behavior. Defaults for remaining job and navigation work are implementation starting points.
 

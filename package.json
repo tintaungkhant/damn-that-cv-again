@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --port 3800",
     "lint": "eslint",
-    "test": "node --test lib/storage/*.test.ts lib/ai/*.test.ts lib/ai/claude/*.test.ts",
+    "test": "node --test lib/*.test.ts lib/storage/*.test.ts lib/ai/*.test.ts lib/ai/claude/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
