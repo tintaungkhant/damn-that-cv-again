@@ -7,7 +7,7 @@ import { jobStatuses, type Job } from "@/lib/storage/job-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel, FieldSet } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
 export function StatusOptions() {
@@ -54,7 +54,7 @@ export function JobForm({ job, activity = false }: { job?: Job; activity?: boole
     });
   }
   return <form ref={formRef} onSubmit={submit} className="flex flex-col gap-4">
-    <fieldset disabled={pending} className="flex min-w-0 flex-col gap-4">
+    <FieldSet disabled={pending} className="min-w-0">
       {!activity && <>
         <Field><FieldLabel htmlFor={job ? "edit-title" : "new-title"}>Title</FieldLabel><Input id={job ? "edit-title" : "new-title"} name="title" required maxLength={200} defaultValue={job?.title} /></Field>
         <Field><FieldLabel htmlFor={job ? "edit-url" : "new-url"}>Job URL</FieldLabel><Input id={job ? "edit-url" : "new-url"} name="url" type="url" required maxLength={4000} defaultValue={job?.url} placeholder="https://…" /></Field>
@@ -63,7 +63,7 @@ export function JobForm({ job, activity = false }: { job?: Job; activity?: boole
       {(activity || !job) && <Field><FieldLabel htmlFor={activity ? "activity-status" : "new-status"}>Status</FieldLabel><NativeSelect id={activity ? "activity-status" : "new-status"} name="status" value={selectedStatus ?? job?.status ?? "Applied"} onChange={event => setSelectedStatus(event.target.value)}><StatusOptions /></NativeSelect></Field>}
       {activity && <Field><FieldLabel htmlFor="job-comment">Comment (optional when changing status)</FieldLabel><Textarea id="job-comment" name="comment" maxLength={100_000} placeholder="Add a plain-text update" /></Field>}
       <Button type="submit" className="self-start">{pending ? "Saving…" : activity ? "Post update" : job ? "Save fields" : "Create job"}</Button>
-    </fieldset>
+    </FieldSet>
     {error && <div role="alert" className="text-sm text-destructive"><p>{error}</p><Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => router.refresh()}>Refresh saved job (keep input)</Button></div>}
     {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
   </form>;

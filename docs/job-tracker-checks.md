@@ -27,3 +27,13 @@ Input limits: title 200 characters, URL 4,000, description/comment 100,000 each,
 ## Review
 
 Review baseline: `1ba1e5a48fb1084f67112836ad36d679205669bf`. Standards and spec review run inline, as required by `.ai/rules/agent-workflow.md`. Visual acceptance remains user-run.
+
+### Standards
+
+No remaining findings. Reviewed AGENTS.md, all six `.ai/rules/` files, ADR-0001, installed Next.js guidance, and the code-review skill's smell baseline. Used existing shadcn FieldSet and Empty components during review. No extra agent, browser automation, API route, or new runtime dependency was introduced.
+
+### Spec
+
+No remaining findings against Ticket 12 and the workspace spec's applied-job tracker section. Review corrected status-selection behavior after refresh, preserved the original operation/version on uncertain retries, and keyed forms by job ID so navigating between jobs cannot reuse another job's input state. Manual scenarios cover unsent-input preservation, literal comments, and display behavior.
+
+Standards: 0 remaining findings. Spec: 0 remaining findings. All 69 behavior tests pass; typecheck, lint and production build pass. Final UI-only review corrections receive typecheck/lint/build checks; visuals remain user-run.

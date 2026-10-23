@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 type Query = Promise<Record<string, string | string[] | undefined>>;
 export default function JobsPage({ searchParams }: { searchParams: Query }) {
@@ -44,7 +45,7 @@ async function Jobs({ searchParams }: { searchParams: Query }) {
       <Button type="submit" variant="outline">Search</Button>
     </form>
     <p className="text-sm text-muted-foreground">{result.total} jobs · Page {result.page} of {Math.max(1, Math.ceil(result.total / 25))}</p>
-    {result.items.length === 0 && <Card><CardContent className="py-6">No jobs found. Create a job above or change your filters.</CardContent></Card>}
+    {result.items.length === 0 && <Empty className="border"><EmptyHeader><EmptyTitle>No jobs found</EmptyTitle><EmptyDescription>Create a job above or change your filters.</EmptyDescription></EmptyHeader></Empty>}
     {result.items.map(job => <Item key={job.id} variant="outline"><ItemContent>
       <ItemTitle><Link href={`/jobs/${job.id}`} className="underline">{job.title}</Link><Badge variant="secondary">{job.status}</Badge></ItemTitle>
       <a href={job.url} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-muted-foreground underline">{job.url}</a>
