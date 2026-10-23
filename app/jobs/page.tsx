@@ -1,28 +1,30 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
+import { ExternalLinkIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
+import { formatDateTime } from "@/lib/utils";
 import { jobListInput, jobStatuses } from "@/lib/storage/job-input";
-import { JobForm } from "@/components/jobs/forms";
+import { JobDialog } from "@/components/jobs/forms";
+import { JobStatusBadge } from "@/components/jobs/status-badge";
+import { ListPagination } from "@/components/list-pagination";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
-import { ListPagination } from "@/components/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 
 type Query = Promise<Record<string, string | string[] | undefined>>;
 export default function JobsPage({ searchParams }: { searchParams: Query }) {
   return <><PageHeader trail={[{ label: "Home", href: "/" }, { label: "Jobs" }]} />
-    <div className="flex-1 overflow-y-auto"><div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-8">
-      <div><h1 className="text-2xl font-semibold">Jobs</h1><p className="text-sm text-muted-foreground">Track applications and updates. Saved links are never fetched.</p></div>
-      <Card><CardHeader><CardTitle>Create job</CardTitle></CardHeader><CardContent><JobForm /></CardContent></Card>
-      <Suspense fallback={<Skeleton className="h-64" />}><Jobs searchParams={searchParams} /></Suspense>
+    <div className="flex-1 overflow-y-auto"><div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><h1 className="text-2xl font-semibold">Jobs</h1><p className="text-sm text-muted-foreground">Track applications and updates. Saved links are never fetched.</p></div>
+        <JobDialog><Button><PlusIcon />New job</Button></JobDialog>
+      </div>
+      <Suspense fallback={<Skeleton className="h-96" />}><Jobs searchParams={searchParams} /></Suspense>
     </div></div></>;
 }
 
@@ -33,24 +35,43 @@ async function Jobs({ searchParams }: { searchParams: Query }) {
   if (!parsed.success) return <p role="alert">Invalid search, status, or page. <Link href="/jobs" className="underline">Reset filters</Link></p>;
   const filters = parsed.data;
   const result = getStore().listJobs(filters);
+  const filtered = !!filters.search || !!filters.status;
   function pageHref(page: number) {
     const params = new URLSearchParams({ search: filters.search, page: String(page) });
     if (filters.status) params.set("status", filters.status);
     return `/jobs?${params}`;
   }
   return <section className="flex flex-col gap-4" aria-label="Saved jobs">
-    <form action="/jobs" className="flex flex-wrap items-end gap-3">
-      <Field className="min-w-48 flex-1"><FieldLabel htmlFor="job-search">Search jobs</FieldLabel><Input id="job-search" name="search" defaultValue={filters.search} maxLength={200} /></Field>
-      <Field className="w-auto"><FieldLabel htmlFor="job-filter">Status</FieldLabel><NativeSelect id="job-filter" name="status" defaultValue={filters.status ?? ""}><NativeSelectOption value="">All statuses</NativeSelectOption>{jobStatuses.map(status => <NativeSelectOption key={status}>{status}</NativeSelectOption>)}</NativeSelect></Field>
-      <Button type="submit" variant="outline">Search</Button>
+    <form action="/jobs" className="flex flex-wrap items-center gap-2">
+      <InputGroup className="w-full sm:max-w-sm">
+        <InputGroupAddon><SearchIcon /></InputGroupAddon>
+        <InputGroupInput name="search" aria-label="Search jobs" placeholder="Search title, URL, description" defaultValue={filters.search} maxLength={200} />
+      </InputGroup>
+      <NativeSelect name="status" aria-label="Status" defaultValue={filters.status ?? ""}><NativeSelectOption value="">All statuses</NativeSelectOption>{jobStatuses.map(status => <NativeSelectOption key={status}>{status}</NativeSelectOption>)}</NativeSelect>
+      <Button type="submit" variant="outline">Apply</Button>
+      {filtered && <Button variant="ghost" asChild><Link href="/jobs">Reset</Link></Button>}
     </form>
-    <p className="text-sm text-muted-foreground">{result.total} jobs · Page {result.page} of {Math.max(1, Math.ceil(result.total / 25))}</p>
-    {result.items.length === 0 && <Empty className="border"><EmptyHeader><EmptyTitle>No jobs found</EmptyTitle><EmptyDescription>Create a job above or change your filters.</EmptyDescription></EmptyHeader></Empty>}
-    {result.items.map(job => <Item key={job.id} variant="outline"><ItemContent>
-      <ItemTitle><Link href={`/jobs/${job.id}`} className="underline">{job.title}</Link><Badge variant="secondary">{job.status}</Badge></ItemTitle>
-      <a href={job.url} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-muted-foreground underline">{job.url}</a>
-      <p className="text-xs text-muted-foreground">Updated <time dateTime={job.updated_at}>{job.updated_at}</time></p>
-    </ItemContent></Item>)}
-    <ListPagination page={result.page} total={result.total} href={pageHref} />
+    {result.items.length === 0 ? <Empty className="border">
+      <EmptyHeader><EmptyTitle>{filtered ? "No matching jobs" : "No jobs yet"}</EmptyTitle><EmptyDescription>{filtered ? "Change or reset your filters." : "Add the first application you want to track."}</EmptyDescription></EmptyHeader>
+      {!filtered && <EmptyContent><JobDialog><Button><PlusIcon />New job</Button></JobDialog></EmptyContent>}
+    </Empty> : <div className="rounded-lg border">
+      <Table>
+        <TableHeader><TableRow>
+          <TableHead>Title</TableHead><TableHead>Status</TableHead><TableHead className="hidden md:table-cell">Link</TableHead><TableHead className="text-right">Updated</TableHead>
+        </TableRow></TableHeader>
+        <TableBody>
+          {result.items.map(job => <TableRow key={job.id}>
+            <TableCell className="max-w-64 truncate font-medium"><Link href={`/jobs/${job.id}`} className="hover:underline">{job.title}</Link></TableCell>
+            <TableCell><JobStatusBadge status={job.status} /></TableCell>
+            <TableCell className="hidden max-w-64 md:table-cell"><a href={job.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 text-muted-foreground hover:underline"><span className="truncate">{new URL(job.url).host}</span><ExternalLinkIcon className="size-3 shrink-0" /><span className="sr-only">(opens in new tab)</span></a></TableCell>
+            <TableCell className="text-right text-muted-foreground"><time dateTime={job.updated_at}>{formatDateTime(job.updated_at)}</time></TableCell>
+          </TableRow>)}
+        </TableBody>
+      </Table>
+    </div>}
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p className="text-sm text-muted-foreground">{result.total} jobs · Page {result.page} of {Math.max(1, Math.ceil(result.total / 25))}</p>
+      <div><ListPagination page={result.page} total={result.total} href={pageHref} /></div>
+    </div>
   </section>;
 }

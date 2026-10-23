@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createJob, editJob, addJobActivity } from "@/app/job-actions";
 import { jobStatuses, type Job } from "@/lib/storage/job-input";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldSet } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export function StatusOptions() {
   return jobStatuses.map(status => <NativeSelectOption key={status} value={status}>{status}</NativeSelectOption>);
 }
 
-export function JobForm({ job, activity = false }: { job?: Job; activity?: boolean }) {
+export function JobForm({ job, activity = false, onSaved }: { job?: Job; activity?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -50,6 +52,7 @@ export function JobForm({ job, activity = false }: { job?: Job; activity?: boole
         }
         setNotice("Saved.");
         router.refresh();
+        onSaved?.();
       } catch { setError("Could not confirm the save. Retry unchanged input to avoid duplicates."); }
     });
   }
@@ -67,4 +70,19 @@ export function JobForm({ job, activity = false }: { job?: Job; activity?: boole
     {error && <div role="alert" className="text-sm text-destructive"><p>{error}</p><Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => router.refresh()}>Refresh saved job (keep input)</Button></div>}
     {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
   </form>;
+}
+
+// Edit stays open on errors so unsent input survives stale-write refreshes.
+export function JobDialog({ job, children }: { job?: Job; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild>{children}</DialogTrigger>
+    <DialogContent className="sm:max-w-xl">
+      <DialogHeader>
+        <DialogTitle>{job ? "Edit job" : "New job"}</DialogTitle>
+        <DialogDescription>{job ? "Changes are recorded in the activity history." : "Saved links are never fetched."}</DialogDescription>
+      </DialogHeader>
+      <JobForm job={job} onSaved={() => { setOpen(false); toast.success("Job saved."); }} />
+    </DialogContent>
+  </Dialog>;
 }

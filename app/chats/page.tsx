@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { io } from "next/cache";
 import { FileTextIcon, MessagesSquareIcon, PlusIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
+import { formatDateTime } from "@/lib/utils";
 import { chatListInput } from "@/lib/storage/store";
 import { DeleteChatButton, NewChatDialog } from "@/components/chats/forms";
 import { PageHeader } from "@/components/page-header";
@@ -53,7 +54,7 @@ async function Chats({ searchParams }: { searchParams: Query }) {
           <ItemMedia variant="icon">{chat.category === "build" ? <FileTextIcon /> : <MessagesSquareIcon />}</ItemMedia>
           <ItemContent>
             <ItemTitle><Link href={`/chats/${chat.id}`} className="underline">{chat.title}</Link></ItemTitle>
-            <ItemDescription>Updated <time dateTime={chat.updated_at}>{chat.updated_at}</time></ItemDescription>
+            <ItemDescription>Updated <time dateTime={chat.updated_at}>{formatDateTime(chat.updated_at)}</time></ItemDescription>
           </ItemContent>
           <ItemActions><DeleteChatButton id={chat.id} category={chat.category} title={chat.title} /></ItemActions>
         </Item>)}

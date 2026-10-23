@@ -1,6 +1,6 @@
 # Job tracker checks
 
-Ticket 12 adds `/jobs`, direct `/jobs/<id>` details, and the Jobs sidebar link. It stores links without requesting their contents. Build-chat tailoring settings remain independent.
+Ticket 12 adds `/jobs`, direct `/jobs/<id>` details, and the Jobs sidebar link. The list is a table (title, status, link host, updated) with search, status filter, and pagination; **New job** opens a dialog. The detail page shows the activity timeline with an update composer below it, a Details panel (status, dates, description), and **Edit** in a dialog. It stores links without requesting their contents. Build-chat tailoring settings remain independent.
 
 ## Automated evidence
 
@@ -12,9 +12,9 @@ Ticket 12 adds `/jobs`, direct `/jobs/<id>` details, and the Jobs sidebar link. 
 
 No agent browser or visual checks are allowed by `.ai/rules/testing.md`. Run `bun run dev`, open `http://localhost:3800/jobs`, and check these scenarios:
 
-1. Check Jobs navigation in expanded and collapsed sidebar modes. Create an application with a title and HTTP(S) URL. Leave description empty and status at Applied. Confirm its direct detail URL, creation event, and initial values. Reopen after a server restart.
+1. Check Jobs navigation in expanded and collapsed sidebar modes. Use **New job** to create an application with a title and HTTP(S) URL. Leave description empty and status at Applied. Confirm its direct detail URL, creation event, and initial values. Reopen after a server restart.
 2. Create another application with the same URL and a different status. Duplicate URLs should work. Try an invalid URL and a blank title; saving must fail. Links open externally only when clicked.
-3. Edit title, URL, and a multiline description. Check complete previous/new values in one detail event. Save unchanged fields; no new event should appear.
+3. Use **Edit** to change title, URL, and a multiline description; the dialog closes with a saved notice. On a stale-write error the dialog stays open with your input. Check complete previous/new values in one detail event. Save unchanged fields; no new event should appear.
 4. Post a comment alone, change status alone, then submit both together. Check one chronological event for each submission; the combined event must contain both changes. Confirm the selected status stays current after saving.
 5. Enter `<script>alert(1)</script>` and `<b>hello</b>` in a comment. They must appear literally as text. No comment or event has edit/delete controls.
 6. Open one job in two tabs. Save a field or status change in the first. Attempt a write from the older second tab. It must reject with a refresh instruction and keep unsent fields/comment. Use **Refresh saved job (keep input)**, reconcile your input, then save again.
