@@ -55,3 +55,9 @@ Schema v3 adds per-build-chat settings, a settings version, and an explicit acce
 Successful replies save assistant text, profile proposals, and CV drafts in one transaction. Every CV claim must reference a confirmed block in its request's profile snapshot; Open questions cannot support claims. Snapshot references preserve evidence context if the shared profile later changes. This validates references, not semantic truth; career-editor instructions and manual realistic-input checks cover factual wording.
 
 Acceptance changes only the explicit pointer and marks the selected draft accepted. Discard applies only to drafts. Restore appends a draft from history and requires a separate acceptance. Accepted history is never overwritten. Revision mutations compare the accepted pointer reviewed by the user and reject active replies; settings use an optimistic version check. Deleting a build chat cascades to its settings and CVs.
+
+## Ticket 11 extension: attachment persistence
+
+Schema v4 adds `attachments`, owned by a source message with cascade deletion. Originals are BLOBs; immutable prepared text, page counts, and preparation version accompany them. Normal message reads return only plain metadata. Download and provider-input reads join through the owning chat and local user. A message and its attachments commit in one transaction; retry changes only the original message status.
+
+This is an additive local migration. Existing text messages, profile proposals/history, and CV data remain unchanged. Mixed old/new writers are not supported: older binaries reject v4 rather than opening it incorrectly. Rollback means restore a pre-upgrade database copy with the previous binary; do not lower `user_version` or drop attachment records on a database used by the new application. The app does not provide automated backup/restore.

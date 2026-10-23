@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { preparedAttachment, type AttachmentMetadata, type PreparedAttachment } from "../attachments/types.ts";
 import { profileProposal, emptyProfile, applyProfileOperations, canReapply, parseProfile, type SavedProposal, type ProfileRevision } from "./profile.ts";
 
 import { buildSettings, defaultBuildSettings, cvRevisionAction, validateCvEvidence, type CvRevision } from "./build.ts";
@@ -13,9 +14,9 @@ export const chatInput = z.object({
   title: z.string().trim().min(1).max(120),
 });
 const chatId = z.uuid();
-export type Message = { id: string; role: "user" | "assistant"; content: string; status: "pending" | "complete" | "failed" };
+export type Message = { id: string; role: "user" | "assistant"; content: string; status: "pending" | "complete" | "failed"; attachments?: AttachmentMetadata[] };
 export const turnInput = z.union([
-  z.object({ chatId: z.uuid(), content: z.string().trim().min(1).max(100_000) }).strict(),
+  z.object({ chatId: z.uuid(), content: z.string().trim().max(100_000), attachments: z.array(preparedAttachment).max(5).optional() }).strict().refine(input => input.content.length > 0 || !!input.attachments?.length, "Write a message or attach a file.").refine(input => (input.attachments ?? []).reduce((sum, file) => sum + file.bytes.length, 0) <= 20 * 1024 * 1024, "Combined files exceed 20 MiB."),
   z.object({ chatId: z.uuid(), retryId: z.uuid() }).strict(),
 ]);
 export type Chat = { id: string; category: "profile" | "build"; title: string; created_at: string };
@@ -64,7 +65,7 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1 && version !== 2 && version !== 3) {
+    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4) {
       throw new Error("Database version is newer than this app supports.");
     }
     if (version === 0 || version === 1) {
@@ -101,6 +102,23 @@ export function openStore(path: string) {
       db.prepare("INSERT INTO build_context(chat_id, settings) SELECT id, ? FROM chats WHERE category = 'build'").run(JSON.stringify(defaultBuildSettings));
       db.exec("UPDATE build_context SET accepted_revision = (SELECT id FROM cv_revisions WHERE chat_id = build_context.chat_id AND status = 'accepted' ORDER BY rowid DESC LIMIT 1)");
     }
+    if (version === 0 || version === 1 || version === 2 || version === 3) {
+      db.exec(`
+        CREATE TABLE attachments (
+          id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          media_type TEXT NOT NULL,
+          size INTEGER NOT NULL CHECK(size BETWEEN 1 AND 10485760),
+          bytes BLOB NOT NULL,
+          prepared_text TEXT NOT NULL,
+          pages INTEGER NOT NULL,
+          preparation_version INTEGER NOT NULL CHECK(preparation_version = 1)
+        );
+        CREATE INDEX attachments_message ON attachments(message_id);
+        PRAGMA user_version = 4;
+      `);
+    }
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
   } catch (error) {
@@ -125,7 +143,23 @@ export function openStore(path: string) {
       db.prepare("DELETE FROM chats WHERE id = ? AND user_id = ?").run(chat.id, userId);
     },
     getMessages(id: string): Message[] {
-      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY rowid").all(chatId.parse(id), userId).map(row => ({ ...row })) as Message[];
+      return db.prepare("SELECT id, role, content, status FROM messages WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY rowid").all(chatId.parse(id), userId).map(row => {
+        const attachments = db.prepare("SELECT id, name, media_type AS mediaType, size FROM attachments WHERE message_id = ? ORDER BY rowid").all(row.id) as AttachmentMetadata[];
+        return { ...row, ...(attachments.length ? { attachments: attachments.map(item => ({ ...item })) } : {}) };
+      }) as Message[];
+    },
+    downloadAttachment(id: string, attachmentId: string) {
+      const row = db.prepare(`SELECT a.name, a.media_type, a.bytes FROM attachments a JOIN messages m ON m.id = a.message_id
+        JOIN chats c ON c.id = m.chat_id WHERE a.id = ? AND c.id = ? AND c.user_id = ?`).get(chatId.parse(attachmentId), chatId.parse(id), userId);
+      if (!row) throw new Error("Attachment not found in this chat.");
+      return { name: String(row.name), mediaType: String(row.media_type), bytes: new Uint8Array(row.bytes as Uint8Array) };
+    },
+    getMessageAttachments(id: string, messageId: string): PreparedAttachment[] {
+      return db.prepare(`SELECT a.* FROM attachments a JOIN messages m ON m.id = a.message_id JOIN chats c ON c.id = m.chat_id
+        WHERE m.id = ? AND c.id = ? AND c.user_id = ? ORDER BY a.rowid`).all(chatId.parse(messageId), chatId.parse(id), userId).map(row => ({
+          name: String(row.name), mediaType: row.media_type as PreparedAttachment["mediaType"], bytes: new Uint8Array(row.bytes as Uint8Array),
+          text: String(row.prepared_text), pages: Number(row.pages), preparationVersion: 1,
+        }));
     },
     beginTurn(input: unknown): Message {
       const parsed = turnInput.parse(input);
@@ -146,6 +180,10 @@ export function openStore(path: string) {
           if (messages.at(-1)?.status === "failed") throw new Error("Retry the failed message before sending another.");
           id = randomUUID();
           db.prepare("INSERT INTO messages(id, chat_id, role, content, status) VALUES (?, ?, 'user', ?, 'pending')").run(id, parsed.chatId, parsed.content);
+          for (const file of parsed.attachments ?? []) {
+            db.prepare(`INSERT INTO attachments(id, message_id, name, media_type, size, bytes, prepared_text, pages, preparation_version)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(randomUUID(), id, file.name, file.mediaType, file.bytes.length, file.bytes, file.text, file.pages, file.preparationVersion);
+          }
         }
         db.exec("COMMIT");
         return this.getMessages(parsed.chatId).find(message => message.id === id)!;

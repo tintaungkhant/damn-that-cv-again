@@ -35,3 +35,4 @@ Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's veri
 
 - 2026-10-23: Planned; start only after Ticket 10 resolves provider and transport feasibility.
 - 2026-10-23: Unblocked by completed Ticket 10. Verified decisions above replace the earlier open provider/storage/package choices. No attachment feature is shipped yet.
+- 2026-10-23: Storage slice complete: additive v4 migration, atomic attachment/message persistence, metadata-only reads, scoped binary downloads, immutable retry and cascade deletion. Seven focused storage tests, typecheck, lint, and build pass. UI/provider integration follows; uploads are not exposed yet. Manual acceptance follows the final integration instructions.
