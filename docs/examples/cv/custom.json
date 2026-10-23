@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "contact": {
+    "name": "Alex Example",
+    "headline": "Backend engineer",
+    "email": "alex@example.com",
+    "phone": "+66 00 000 0000",
+    "location": "Bangkok",
+    "links": [
+      {
+        "label": "Portfolio",
+        "url": "https://example.com"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "type": "text",
+      "title": "About",
+      "content": {
+        "text": "Backend engineer building queue services.",
+        "evidence": [
+          "p-role"
+        ]
+      }
+    },
+    {
+      "type": "list",
+      "title": "Selected tools",
+      "items": [
+        {
+          "text": "TypeScript",
+          "evidence": [
+            "p-skills"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "entries",
+      "title": "Selected contributions",
+      "entries": [
+        {
+          "heading": {
+            "text": "Queue service",
+            "evidence": [
+              "p-queue"
+            ]
+          },
+          "organization": {
+            "text": "ExampleCo",
+            "evidence": [
+              "p-role"
+            ]
+          },
+          "location": {
+            "text": "Remote",
+            "evidence": [
+              "p-role"
+            ]
+          },
+          "period": {
+            "text": "2020–2022",
+            "evidence": [
+              "p-role"
+            ]
+          },
+          "description": {
+            "text": "Backend service work.",
+            "evidence": [
+              "p-queue"
+            ]
+          },
+          "highlights": [
+            {
+              "text": "Built retry handling.",
+              "evidence": [
+                "p-queue"
+              ]
+            }
+          ],
+          "links": [
+            {
+              "url": "https://example.com/work"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "text": "Independent research",
+            "evidence": [
+              "p-research"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

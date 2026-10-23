@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "type": "text",
+      "title": "Research interests",
+      "content": {
+        "text": "Reliable distributed systems",
+        "evidence": [
+          "p-research"
+        ]
+      }
+    }
+  ]
+}
