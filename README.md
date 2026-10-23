@@ -37,6 +37,8 @@ Product scope: `docs/product-spec.md`. Tickets: `.scratch/v1/issues/`.
 
 Attachments (PDF, DOCX, text, images), an applied-job tracker with activity history, bounded chat navigation, and workspace hide/show are specified but not implemented. See `.scratch/workspace-next/spec.md` and Tickets 10–14 in `.scratch/workspace-next/issues/`.
 
+Ticket 10 attachment feasibility is complete; findings and runnable isolated probes are in `.scratch/workspace-next/attachments/`. Native scanned PDFs and PNG/JPEG/WebP inputs passed live subscription calls; DOCX support will extract text only. SQLite BLOB upload/download transport passed at the planned limits. Ticket 11 owns the actual feature; current chats still accept text only.
+
 ## Checks
 
 ```sh

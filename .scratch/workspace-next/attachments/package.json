@@ -1,0 +1,12 @@
+{
+  "name": "attachment-feasibility",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "file-type": "22.2.0",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299",
+    "sharp": "0.35.5",
+    "yauzl": "3.4.0"
+  }
+}

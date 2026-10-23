@@ -143,6 +143,8 @@ Retired from version one by the user on 2026-10-23 (Ticket 08, wontfix). CV JSON
 
 On 2026-10-23 the user approved planning file attachments (PDF, DOCX, text, and images), a simple applied-job tracker with comments and change history, scalable chat navigation, and a collapsible/expandable right workspace panel. These features are not implemented yet. Detailed scope, defaults, acceptance, and delivery order: `.scratch/workspace-next/spec.md`; Tickets 10–14 in `.scratch/workspace-next/issues/`. This increment supersedes the original exclusions for document uploads and application tracking only. Job URLs are stored links, not URL imports or scraping.
 
+Ticket 10 feasibility is complete: `.scratch/workspace-next/attachments/findings.md`. Native PDF (including scanned) and image blocks work through the installed subscription adapter with async input; DOCX uses explicitly labeled text-only extraction, and image-only DOCX must reject. SQLite BLOBs, 20 MiB combined multipart uploads with a 21 MiB action-body limit, and typed-array downloads passed isolated production transport probes. Ticket 11 owns production integration and the documented validation/context bounds; no upload UI, migration, or production configuration change has shipped.
+
 ## Original version-one exclusions
 
 No application authentication, template generation, HTML/CSS CV rendering, PDF output, document uploads, URL imports, job scraping, application tracking, vector search, provider selection, provider switching, API-key authentication, or additional provider adapters. Image and document capabilities were discussed as provider capabilities, not approved scope additions.

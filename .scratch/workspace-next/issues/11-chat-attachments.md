@@ -11,10 +11,21 @@ Send persistent files as assistant context in both chat categories.
 
 Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's verified design. Add backward-compatible storage migration, validated upload/download Server Actions, provider-neutral attachment input, adapter mapping, composer selection/removal, and saved-message attachment downloads. Preserve atomic message saves, immutable retries, explicit document approvals, cancellation, and deletion ownership rules.
 
+## Verified implementation decisions
+
+- Ticket 10 is complete: [findings](../attachments/findings.md). All requested formats have a viable path; application integration is still required.
+- Store originals as SQLite BLOBs, with immutable prepared text, preparation version, and relational ownership. Return metadata only in normal chat reads. Reuse saved inputs on retry/reopen; keep SDK types in the isolated Claude adapter.
+- Use native async SDK image/document blocks; Mammoth 1.13.0 for DOCX text; file-type 22.2.0 for signatures; PDF.js 6.4.299 for PDF validation; Sharp 0.35.5 for image validation; Yauzl 3.4.0 plus its TypeScript definitions for ZIP inspection. Declare direct application dependencies when implementing; scratch dependencies do not make them production dependencies.
+- DOCX is text only. Show the limitation before sending; reject image-only DOCX with PDF/image guidance. Preserve tables' text; never claim embedded images or rendered formatting were analyzed.
+- Set the Server Action body limit to `21mb`; enforce five files / 10 MiB each / 20 MiB combined inside the action. Bound filenames to 255 characters and text/metadata to leave multipart headroom. Downloads return a `Uint8Array` and become a browser Blob.
+- Apply the spec's extracted-text, ZIP expansion/entry, image dimension/animation, cumulative PDF-page/image, and 30,000,000-byte reconstructed-payload bounds. Parse in a terminable worker with a 15-second deadline and bounded concurrency. Reject instead of truncating. Keep provider context-limit handling.
+- Return structured errors for expected validation failures. Framework body parsing can return HTTP 500 before the action runs; add a clear UI transport fallback without assuming every oversized request returns 413.
+
 ## Acceptance
 
 - [ ] All four format families work with optional message text, survive restart, and reach provider context after reopen and retry.
 - [ ] Type, signature, encoding, size, count, corrupt/encrypted document, cross-chat access, and context-limit failures are tested.
+- [ ] DOCX text-only notice, image-only DOCX rejection, ZIP expansion/entry bounds, parser timeout, animation rejection, and cumulative replay limits are covered.
 - [ ] Failed upload leaves no partial message/files; failed reply retains the saved attachments; retry creates no duplicates.
 - [ ] Binary downloads match original bytes and deleting a chat removes only its attachments.
 - [ ] Existing text-only chats, profile approval, CV acceptance, export, and failure behavior still pass.
@@ -23,3 +34,4 @@ Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's veri
 ## Comments
 
 - 2026-10-23: Planned; start only after Ticket 10 resolves provider and transport feasibility.
+- 2026-10-23: Unblocked by completed Ticket 10. Verified decisions above replace the earlier open provider/storage/package choices. No attachment feature is shipped yet.

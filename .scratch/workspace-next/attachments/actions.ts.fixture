@@ -1,0 +1,59 @@
+"use server";
+
+import { DatabaseSync } from "node:sqlite";
+import { createHash, randomUUID } from "node:crypto";
+
+function store() {
+  const db = new DatabaseSync("probe.sqlite");
+  db.exec(`PRAGMA foreign_keys=ON;
+    CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, chat TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS attachments (id TEXT PRIMARY KEY, message TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE, name TEXT NOT NULL, bytes BLOB NOT NULL);`);
+  return db;
+}
+
+export async function upload(data: FormData) {
+  const files = data.getAll("files");
+  const chat = data.get("chat");
+  if (typeof chat !== "string" || !chat || files.length < 1 || files.length > 5) throw new Error("Invalid attachment input");
+  let size = 0;
+  for (const file of files) {
+    if (!(file instanceof File) || file.size > 10 * 1024 * 1024) throw new Error("File exceeds 10 MiB");
+    size += file.size;
+  }
+  if (size > 20 * 1024 * 1024) throw new Error("Combined files exceed 20 MiB");
+  const db = store();
+  const id = randomUUID();
+  try {
+    db.exec("BEGIN IMMEDIATE");
+    db.prepare("INSERT INTO messages VALUES (?, ?)").run(id, chat);
+    const attachments = [];
+    for (const item of files) {
+      const file = item as File;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const fileId = randomUUID();
+      db.prepare("INSERT INTO attachments VALUES (?, ?, ?, ?)").run(fileId, id, file.name, bytes);
+      attachments.push({ id: fileId, name: file.name, size: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
+    }
+    db.exec("COMMIT");
+    return { id, attachments, memory: process.memoryUsage(), maxRssKiB: process.resourceUsage().maxRSS };
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  } finally { db.close(); }
+}
+
+export async function download(input: { id: string; chat: string }) {
+  if (!input || typeof input.id !== "string" || typeof input.chat !== "string") throw new Error("Invalid download input");
+  const db = store();
+  try {
+    const file = db.prepare("SELECT a.bytes, a.name FROM attachments a JOIN messages m ON a.message=m.id WHERE a.id=? AND m.chat=?").get(input.id, input.chat);
+    if (!file) throw new Error("Attachment not found");
+    return { name: file.name, bytes: new Uint8Array(file.bytes as Uint8Array), memory: process.memoryUsage() };
+  } finally { db.close(); }
+}
+
+export async function counts() {
+  const db = store();
+  try { return { messages: db.prepare("SELECT count(*) AS n FROM messages").get()!.n, files: db.prepare("SELECT count(*) AS n FROM attachments").get()!.n, memory: process.memoryUsage() }; }
+  finally { db.close(); }
+}

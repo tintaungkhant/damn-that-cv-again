@@ -2,6 +2,7 @@
 
 Status: ready-for-agent
 Type: research
+Completed: 2026-10-23
 
 ## Goal
 
@@ -13,11 +14,12 @@ Follow [scope](../spec.md#chat-attachments). Read installed Next.js Server Actio
 
 ## Acceptance
 
-- [ ] Findings state the verified input matrix, provider limits, error behavior, and package evidence.
-- [ ] Upload/download round trips and memory/payload implications support the proposed limits and storage choice.
-- [ ] No format is silently ignored or truncated; unsupported requirements are flagged.
-- [ ] Ticket 11 and spec reflect the verified decisions and have no unresolved feasibility blocker.
+- [x] Findings state the verified input matrix, provider limits, error behavior, and package evidence.
+- [x] Upload/download round trips and memory/payload implications support the proposed limits and storage choice.
+- [x] No format is silently ignored or truncated; unsupported requirements are flagged.
+- [x] Ticket 11 and spec reflect the verified decisions and have no unresolved feasibility blocker.
 
 ## Comments
 
 - 2026-10-23: Planned. Required formats are PDF, DOCX, text, and images. No implementation yet.
+- 2026-10-23: Completed. [Findings, package evidence, and reproduction](../attachments/findings.md). Distinct markers passed for native text/scanned PDFs, three image formats, DOCX text/table cells, and UTF-8 TXT/Markdown through the existing adapter with a scratch-only async-input wrapper. Reopened/retried/rebuilt context passed. Production Server Action probes verified 20 MiB uploads, byte-identical typed-array downloads, SQLite BLOB restart persistence, ownership rejection, and limit enforcement. DOCX is explicitly text-only; image-only DOCX must reject. Full suite: 53 passed; typecheck, lint, and production build passed. Production features remain Ticket 11.
