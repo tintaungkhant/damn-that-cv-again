@@ -27,7 +27,7 @@ The small version transaction uses SQLite's built-in migration state rather than
 
 Node >=26.11.1 is required. `bun run dev` and `bun run start` invoke the Node-based Next CLI on port 3800; do not substitute Bun's runtime for Node. Storage tests use real temporary SQLite files and the public storage interface. Browser tests were excluded at the user's request.
 
-Application backup/restore remains Ticket 08. Credentials are never written by this storage layer.
+Application backup/restore was retired with Ticket 08 by user request on 2026-10-23. Credentials are never written by this storage layer.
 
 ## Sources checked
 

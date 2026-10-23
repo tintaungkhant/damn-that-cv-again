@@ -15,7 +15,7 @@ The application exports CV JSON. The user supplies that JSON to Claude externall
 - Use SQLite for durable storage across restarts.
 - Store career history as Markdown with stable block IDs (see Profile format), not a structured career database.
 - Store users, chats, messages, profile revisions, and CV revisions as separate records.
-- Keep credentials outside SQLite, exported CVs, and application backups.
+- Keep credentials outside SQLite, exported CVs.
 - The browser reaches the server only through Server Actions. The application has no API endpoints (no Route Handlers) and the browser does not `fetch` its own server. See `.ai/rules/server-actions.md`.
 
 ## Chats
@@ -135,7 +135,7 @@ Each user message makes one Agent SDK `query()` call:
 
 ## Backup and restore
 
-Provide full application data export and restore, including profile history, chats, messages, and CV revisions. Exclude credentials. Validate the backup before applying it, then show a confirmation summarizing its contents (counts of chats, messages, and revisions) before replacing existing data. Export and restore both go through Server Actions; the backup file is uploaded as form data.
+Retired from version one by the user on 2026-10-23 (Ticket 08, wontfix). CV JSON export remains supported. There is no built-in application backup or restore. A one-time local database archive for replacing development test data is maintenance, not a product feature.
 
 ## Version-one exclusions
 
@@ -149,7 +149,7 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 3. Profile chats: block format, proposals, comparison, approval, revisions, undo, stale-revision handling.
 4. Build CV chats: job description, CV proposals, drafts, acceptance, history, restoration, selection explanations.
 5. CV JSON export.
-6. Backup and restore.
+6. Backup and restore: retired (Ticket 08).
 7. Hardening against the acceptance conditions.
 
 ## Acceptance conditions
@@ -162,7 +162,7 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 6. Optional and custom sections export as valid JSON through copy and download.
 7. Request failures preserve messages and saved documents and support retry.
 8. Chat deletion follows the category-specific rules and requires confirmation for build chat deletion.
-9. Backup and restore preserve application data while excluding credentials; replacement requires confirmation.
+9. Retired: application backup and restore removed from scope by user decision on 2026-10-23.
 10. Agent SDK usage stays inside `lib/ai/claude/`, so a different provider or authentication method can replace it without migrating application history.
 11. Assistant replies stream to the browser, and interrupted streams never produce saved proposals or CV revisions.
 
