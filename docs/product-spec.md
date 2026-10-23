@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Messaging and document workflows remain later tickets.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds plain-text streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Document workflows remain later tickets.
 
 ## Purpose
 
@@ -168,7 +168,7 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 ## Remaining implementation decisions
 
 - Resolved: the spike confirmed that the installed Agent SDK supports subscription login, partial-message streaming, in-process tools, and disabling built-in tools and local settings. See `.scratch/v1/spike/findings.md`.
-- Confirm that a Server Action can return a stream the browser reads incrementally, and how that interacts with sequential Server Action dispatch (ticket 03).
+- Resolved: the installed Next.js/React transport returns a `ReadableStream` incrementally and releases the action queue before that stream closes. HTTP and installed-dispatcher probes are recorded in `.scratch/v1/streaming/findings.md`; browser checks are excluded by the testing rule.
 - Define the exact flexible CV schema and the profile proposal operation schema.
 - Resolved: Node `node:sqlite` with transactional `PRAGMA user_version` migrations; see `docs/adr/0001-local-sqlite.md`.
 - Choose the initial Claude model after the spike and a realistic-input trial (career profile, long conversation, CV export), evaluating relevance, output validity, latency, and reported usage.

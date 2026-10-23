@@ -1,0 +1,3 @@
+"use client";
+import { probeStream, probePing } from "./actions";
+export default function Probe() { return <button onClick={() => { void probeStream(); void probePing(); }}>Probe</button>; }

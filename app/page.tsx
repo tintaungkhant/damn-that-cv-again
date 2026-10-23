@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { io } from "next/cache";
 import { z } from "zod";
 import { getStore } from "@/lib/db";
+import { Conversation } from "@/components/chats/conversation";
 import { NewChat, DeleteChat } from "@/components/chats/forms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,10 +56,7 @@ async function Workspace({ searchParams }: { searchParams: Search }) {
             <CardDescription>{active ? (active.category === "profile" ? "Profile chat" : "Build CV chat") : "Create a chat or open one from your list."}</CardDescription></CardHeader>
           <CardContent className="space-y-6">
             {active && <>
-              <p className="text-sm text-muted-foreground">Your chat is saved. Messaging will be available in the next update.</p>
-              {store.getMessages(active.id).map(message => <Card key={String(message.id)}><CardContent className="space-y-2 pt-4">
-                <Badge variant="outline">{String(message.role)}</Badge><p className="whitespace-pre-wrap">{String(message.content)}</p>
-              </CardContent></Card>)}
+              <Conversation key={active.id} chatId={active.id} initialMessages={store.getMessages(active.id)} />
               <Separator />
               <h2 className="font-medium">{active.category === "profile" ? "Saved career profile" : "CV revisions"}</h2>
               {active.category === "profile" ? <p className="whitespace-pre-wrap text-sm text-muted-foreground">{profile ? String(profile.markdown) : "No saved profile yet. Deleting a profile chat will keep your saved career profile."}</p> : <p className="text-sm text-muted-foreground">{store.getCvRevisions(active.id).length} saved revisions</p>}

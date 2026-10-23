@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  serverExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
   experimental: {
     agentFeedback: true,
   },

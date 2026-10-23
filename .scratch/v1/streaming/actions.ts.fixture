@@ -1,0 +1,9 @@
+"use server";
+export async function probeStream() {
+  let timer: ReturnType<typeof setTimeout>;
+  return new ReadableStream({ start(controller) {
+    controller.enqueue({ type: "text-delta", text: "first" });
+    timer = setTimeout(() => { controller.enqueue({ type: "done" }); controller.close(); }, 2000);
+  }, cancel() { clearTimeout(timer); } });
+}
+export async function probePing() { return "pong"; }

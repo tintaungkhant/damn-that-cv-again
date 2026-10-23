@@ -1,6 +1,6 @@
 # 03: Provider layer and streaming chat
 
-Status: claimed
+Status: resolved
 Blocked by: 01, 02
 
 ## Goal
@@ -18,10 +18,17 @@ Plain-text chat that streams through an isolated provider layer.
 
 ## Acceptance
 
-- [ ] Replies stream into the chat view (acceptance condition 11).
-- [ ] Killing a request midway leaves the user message, marked failed, and retry works (acceptance condition 7).
-- [ ] No file outside `lib/ai/claude/` imports the SDK (acceptance condition 10).
+- [x] Replies stream into the chat view (acceptance condition 11).
+- [x] Killing a request midway leaves the user message, marked failed, and retry works (acceptance condition 7).
+- [x] No file outside `lib/ai/claude/` imports the SDK (acceptance condition 10).
 
 ## Comments
 
 - 2026-10-23: Began implementation after reviewing completed dependencies 01 and 02. Storage turn lifecycle now saves before generation, retries the latest failed message in place, commits the assistant atomically, and recovers interrupted turns on app startup. Verified with storage behavior tests and typechecking.
+
+- 2026-10-23: Implemented provider contract in `lib/ai/provider.ts`, isolated subscription adapter in `lib/ai/claude/`, chat orchestration in `lib/ai/chat.ts`, validated Server Actions in `app/chat-actions.ts`, and shadcn message/composer UI. Context reads the latest confirmed profile and only active chat history from SQLite. No provider sessions own application history. Proposal events are typed but rejected until their later schema tickets; this ticket enables plain text only.
+- Transport gate passed: incremental HTTP delivery and installed Next action queue/reducer probes show another action finishes while the returned stream remains open. Production HTTP checks cover a real Claude reply, disconnect, and retry. No endpoint or browser fetch was added. Reproduction and measurements: `.scratch/v1/streaming/findings.md`. Browser and visual checks were not run, per `.ai/rules/testing.md`.
+- Package review: reuse the spike-verified Agent SDK, existing zod, and native ReadableStream; an extra streaming package is unnecessary because the installed Flight transport handles it. Handwritten logic is application-specific turn orchestration. shadcn Message, Bubble, and Textarea were installed through the CLI after checking the component and block catalogs. SDK is externalized from Next bundling because it requires native runtime paths.
+- A single local server recovers pending messages on startup. Stop/disconnect/timeout mark failed; partial assistant text is never saved. Five-minute timeout prevents abandoned provider requests hanging indefinitely. Requests reject blank/oversized input and concurrent turns, and only the latest failed message can be retried.
+
+- Final review used starting commit `7a24668` and ran both axes inline, as required by the agent-workflow rule. Standards: no remaining findings. Spec: fixed a reproduced cancellation/retry race where an old stream disconnect could fail a newer attempt; the regression test now passes. Final gates: 19 behavior tests, typecheck, lint, production build. User visual check remains intentionally unperformed under the testing rule.
