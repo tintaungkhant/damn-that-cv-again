@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Application implementation has not started.
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Messaging and document workflows remain later tickets.
 
 ## Purpose
 
@@ -170,7 +170,8 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 - Resolved: the spike confirmed that the installed Agent SDK supports subscription login, partial-message streaming, in-process tools, and disabling built-in tools and local settings. See `.scratch/v1/spike/findings.md`.
 - Confirm that a Server Action can return a stream the browser reads incrementally, and how that interacts with sequential Server Action dispatch (ticket 03).
 - Define the exact flexible CV schema and the profile proposal operation schema.
-- Choose a compatible SQLite library and migration mechanism after inspecting the local runtime.
+- Resolved: Node `node:sqlite` with transactional `PRAGMA user_version` migrations; see `docs/adr/0001-local-sqlite.md`.
 - Choose the initial Claude model after the spike and a realistic-input trial (career profile, long conversation, CV export), evaluating relevance, output validity, latency, and reported usage.
 
 These details must preserve the agreed scope. No application implementation is included in this specification change.
+

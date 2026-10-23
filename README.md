@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal AI CV Builder
 
-## Getting Started
+A local workspace for career notes and tailored CV conversations.
 
-First, run the development server:
+## Requirements and startup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Use Node 26.11.1 or newer and Bun 1.4.4. Run commands from the repository root:
+
+```sh
+bun install
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3800. Both development and production use port 3800.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For production:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+bun run build
+bun run start
+```
 
-## Learn More
+## Current functionality
 
-To learn more about Next.js, take a look at the following resources:
+Create, reopen, and delete profile or build CV chats. Chats persist across restarts. Build chat deletion asks for confirmation and removes its messages and CV revisions. Deleting a profile chat preserves saved profile history. Messaging and AI generation are later tickets.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+SQLite initializes and seeds the stable local user on first use. Data lives in `data/app.sqlite`; keep the entire `data/` directory out of Git. Stop the app before manually copying database files, including any WAL files. In-app backup and restore will arrive in Ticket 08. Credentials do not belong in the database.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Storage and migration decisions: `docs/adr/0001-local-sqlite.md`.
+Product scope: `docs/product-spec.md`. Tickets: `.scratch/v1/issues/`.
 
-## Deploy on Vercel
+## Checks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sh
+bun run test
+bun run typecheck
+bun run lint
+bun run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Tests cover real SQLite persistence, input validation, deletion confirmation, dependent records, and preservation of shared profile history. No browser test suite is included.

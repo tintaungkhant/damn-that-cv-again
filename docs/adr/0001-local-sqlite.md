@@ -1,0 +1,43 @@
+# ADR-0001: Local SQLite storage and migrations
+
+Date: 2026-10-23
+Status: Accepted for Ticket 02
+
+## Context
+
+The personal app needs five durable tables and category-specific deletion. Local runtime checks returned Node 26.11.1, Bun 1.4.4, and SQLite 3.53.4 through `node:sqlite`. Next.js runs on Node; Bun manages packages and launches scripts. Node types now match the required runtime.
+
+## Decision
+
+Use Node's built-in `DatabaseSync` from `node:sqlite`. Store data at `data/app.sqlite`, resolved from the project root, and ignore the entire data directory in Git. Use prepared statements, foreign keys, WAL, and a five-second busy timeout.
+
+Use SQLite's `PRAGMA user_version` for sequential schema versions. Apply the initial schema and stable `local-user` seed inside one `BEGIN IMMEDIATE` transaction. Reopening version 1 is idempotent. Reject unsupported newer versions and roll back failed initialization. Future schema changes must add a new version transition; never edit an already-applied migration to change existing databases.
+
+Messages and CV revisions reference chats with `ON DELETE CASCADE`. Profile revisions belong to the user independently of chats, so deleting either chat category cannot remove the confirmed profile. Build deletion requires an explicit confirmation flag, checked against the stored category.
+
+The CV table stores JSON without defining the content contract. Ticket 05 still owns that contract and user approval. No provider or generation work belongs to this ticket.
+
+## Alternatives and scope
+
+Reviewed `better-sqlite3`, the `sqlite` wrapper's migrations, and Drizzle's node:sqlite support. Better-sqlite3 adds a native addon and separate type package; the sqlite wrapper adds another driver; Drizzle adds schema tooling beyond the current five-table foundation. The built-in driver already passed the local runtime check.
+
+The small version transaction uses SQLite's built-in migration state rather than a general migration framework. Handwritten SQL keeps this single initial migration explicit without introducing an ORM or additional driver. Reconsider a migration package if later migrations require more machinery.
+
+## Consequences and validation
+
+Node >=26.11.1 is required. `bun run dev` and `bun run start` invoke the Node-based Next CLI on port 3800; do not substitute Bun's runtime for Node. Storage tests use real temporary SQLite files and the public storage interface. Browser tests were excluded at the user's request.
+
+Application backup/restore remains Ticket 08. Credentials are never written by this storage layer.
+
+## Sources checked
+
+- https://nodejs.org/api/sqlite.html
+- https://github.com/WiseLibs/better-sqlite3
+- https://github.com/WiseLibs/better-sqlite3/releases
+- https://github.com/thelocalbranch/node-sqlite
+- https://orm.drizzle.team/docs/get-started/node-sqlite-new
+- https://ui.shadcn.com/docs/installation/next
+- https://ui.shadcn.com/docs/components
+- https://ui.shadcn.com/blocks
+
+The shadcn CLI recognized this installed Next.js project and Tailwind v4, initialized the theme, and installed the UI components. Installed Next.js guides for Server Actions, `use server`, `io`, and `revalidatePath` informed the request-time reads and mutation flow.
