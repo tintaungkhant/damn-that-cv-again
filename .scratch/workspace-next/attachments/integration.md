@@ -1,6 +1,6 @@
 # Ticket 11: integrated chat attachments
 
-Date: 2026-10-23. Ticket 11 implementation complete; user-run visual acceptance remains manual. Jobs and navigation/panel changes remain Tickets 12–13.
+Date: 2026-10-23. Ticket 11 implementation complete; user-run visual acceptance remains manual. Jobs (Ticket 12) and navigation/panel changes (Ticket 13) are implemented separately; Ticket 14 integrated evidence is in `../acceptance/findings.md`.
 
 ## Delivered behavior
 

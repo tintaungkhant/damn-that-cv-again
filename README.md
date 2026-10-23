@@ -35,9 +35,13 @@ SQLite initializes and seeds the stable local user on first use. Data lives in `
 Storage and migration decisions: `docs/adr/0001-local-sqlite.md`.
 Product scope: `docs/product-spec.md`. Tickets: `.scratch/v1/issues/`.
 
-## Planned workspace increment
+## Workspace increment
 
-Tickets 11 and 12 are implemented: persistent chat attachments and an applied-job tracker. Open **Jobs** (`/jobs`) for a table of applications with search, status filter, and 25-row pages; **New job** and **Edit** open dialogs, and each job has a direct detail page. Edit fields, change among six statuses (Applied by default), and add plain-text comments with immutable history. Combined status/comment updates are atomic; stale writes keep unsent input, and repeated submissions do not duplicate events. Job links are stored without fetching. Build-chat job settings remain independent. Manual checks: `docs/job-tracker-checks.md`. Ticket 13 bounds chat navigation (see above) and adds desktop **Hide workspace** / **Show workspace**; manual checks: `docs/navigation-checks.md`. See `.scratch/workspace-next/spec.md` and Tickets 13-14 in `.scratch/workspace-next/issues/`.
+Tickets 11–13 are implemented: persistent chat attachments, an applied-job tracker, bounded chat navigation, and a hideable workspace panel. Ticket 14 verified them together. Automated acceptance passed, and manual UI acceptance is pending with the user (see below). Open **Jobs** (`/jobs`) for a table of applications with search, status filter, and 25-row pages; **New job** and **Edit** open dialogs, and each job has a direct detail page. Edit fields, change among six statuses (Applied by default), and add plain-text comments with immutable history. Combined status/comment updates are atomic; stale writes keep unsent input, and repeated submissions do not duplicate events. Job links are stored without fetching. Build-chat job settings remain independent. Manual checks: `docs/job-tracker-checks.md`. Ticket 13 bounds chat navigation (see above) and adds desktop **Hide workspace** / **Show workspace**; manual checks: `docs/navigation-checks.md`. See `.scratch/workspace-next/spec.md` and Tickets 10–14 in `.scratch/workspace-next/issues/`.
+
+Features deferred from this increment, such as job boards, links between jobs and CVs, and URL scraping, are listed under "Next workspace increment" in `docs/product-spec.md`.
+
+Integrated acceptance: run the checklist in `docs/workspace-acceptance.md` on a wide and a narrow window. `node .scratch/workspace-next/acceptance/workspace.ts` serves a disposable synthetic workspace (120 chats, 30 jobs) at http://localhost:3801 without touching `data/app.sqlite`. Automated evidence, including the production Server Action check from a pre-feature database: `.scratch/workspace-next/acceptance/findings.md`.
 
 Ticket 10 feasibility and package evidence remain in `.scratch/workspace-next/attachments/findings.md`. Ticket 11 implementation evidence and production Server Action/live Claude checks are in `.scratch/workspace-next/attachments/integration.md`. Run from the full repository checkout with installed dependencies: file preparation uses a terminable Node worker outside the Next bundle. Visual acceptance remains manual.
 
@@ -50,7 +54,7 @@ bun run lint
 bun run build
 ```
 
-Tests cover real SQLite persistence, validation, deletion, chat context, streaming, failure, cancellation, retry, profile proposals, approval, stale revisions, undo, stable block IDs, React transport, and provider error normalization. No browser or visual tests are run, following `.ai/rules/testing.md`.
+Tests cover real SQLite persistence, validation, deletion, chat context, streaming, failure, cancellation, retry, profile proposals, approval, stale revisions, undo, stable block IDs, attachments, jobs, bounded chat lists, schema migrations, the workspace panel preference, React transport, and provider error normalization. No browser or visual tests are run, following `.ai/rules/testing.md`.
 
 Transport feasibility and live Server Action checks: `.scratch/v1/streaming/findings.md`. For a visual check, open a chat at http://localhost:3800, send career notes, and check incremental text, Stop reply, and Retry saved message.
 
