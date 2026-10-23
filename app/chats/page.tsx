@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import { ListPagination } from "@/components/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
@@ -57,10 +57,7 @@ async function Chats({ searchParams }: { searchParams: Query }) {
           </ItemContent>
           <ItemActions><DeleteChatButton id={chat.id} category={chat.category} title={chat.title} /></ItemActions>
         </Item>)}
-        <Pagination><PaginationContent>
-          {result.page > 1 && <PaginationItem><PaginationPrevious href={pageHref(result.page - 1)} /></PaginationItem>}
-          {result.page * 25 < result.total && <PaginationItem><PaginationNext href={pageHref(result.page + 1)} /></PaginationItem>}
-        </PaginationContent></Pagination>
+        <ListPagination page={result.page} total={result.total} href={pageHref} />
       </section>
     </div></div></>;
 }

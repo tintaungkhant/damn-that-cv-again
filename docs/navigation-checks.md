@@ -14,7 +14,7 @@ No agent browser or visual checks are allowed by `.ai/rules/testing.md`. Run `bu
 
 1. Collapse the sidebar to icons. Home, Career profile, CV chats, Profile chats, and Jobs stay reachable with tooltips. The current page's link is highlighted, including the matching chat category.
 2. Expanded sidebar: each category shows at most five chats, newest activity first, then **View all (N)**. Send a message in an older chat; it moves to the top of its category.
-3. Open **CV chats** and **Profile chats**. Search for a title fragment of an old chat on a later page and open it. Its breadcrumb shows the category link and chat title. Next/previous keep the search.
+3. Open **CV chats** and **Profile chats**. Search for a title fragment of an old chat on a later page and open it. Its browser tab title and breadcrumb show the chat title; the breadcrumb links back to its category. Next/previous keep the search.
 4. Create a chat from a category page; it opens the new chat. Delete a chat from a category page; you return to that page. Delete the open chat from the sidebar; you return Home. Build chat deletion still warns about CV revisions.
 5. On a wide screen (1024px or more), select a workspace tab and drag the panel wider. Use **Hide workspace**; the conversation takes the full width and the workspace is skipped by Tab. Use **Show workspace**; the same tab and width return.
 6. Type unsaved values in the build chat **Job** tab. Hide and show the workspace; the values remain.
@@ -22,3 +22,7 @@ No agent browser or visual checks are allowed by `.ai/rules/testing.md`. Run `bu
 8. With the workspace hidden, use an in-thread **Review draft** or **Review changes** action. The workspace reopens on that tab. Nothing is approved automatically. A reply that proposes changes while hidden shows a **Review** toast.
 9. Narrow the window below 1024px. The **Workspace** sheet button still opens the workspace, even if the desktop preference is hidden.
 10. In browser dev tools, set the `cv-workspace-panel` local storage value to `{"open":true,"size":99}` and reload. The workspace opens at its maximum width; the conversation keeps its minimum. Set it to `garbage` and reload; the default layout appears.
+
+## Review
+
+Review baseline: `3cf4bfd`. Standards and spec review ran inline, as required by `.ai/rules/agent-workflow.md`. Fixed: chat pages now set the browser tab title to the chat title, and Jobs and chat lists share one pagination component. Visual acceptance remains user-run.

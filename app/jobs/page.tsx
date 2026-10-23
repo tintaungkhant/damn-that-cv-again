@@ -12,7 +12,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
-import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import { ListPagination } from "@/components/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
@@ -51,9 +51,6 @@ async function Jobs({ searchParams }: { searchParams: Query }) {
       <a href={job.url} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-muted-foreground underline">{job.url}</a>
       <p className="text-xs text-muted-foreground">Updated <time dateTime={job.updated_at}>{job.updated_at}</time></p>
     </ItemContent></Item>)}
-    <Pagination><PaginationContent>
-      {result.page > 1 && <PaginationItem><PaginationPrevious href={pageHref(result.page - 1)} /></PaginationItem>}
-      {result.page * 25 < result.total && <PaginationItem><PaginationNext href={pageHref(result.page + 1)} /></PaginationItem>}
-    </PaginationContent></Pagination>
+    <ListPagination page={result.page} total={result.total} href={pageHref} />
   </section>;
 }

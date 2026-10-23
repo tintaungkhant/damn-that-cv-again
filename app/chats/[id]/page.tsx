@@ -7,6 +7,12 @@ import { ChatWorkspace } from "@/components/chats/chat-workspace";
 import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/ui/spinner";
 
+export async function generateMetadata({ params }: PageProps<"/chats/[id]">) {
+  const parsed = z.uuid().safeParse((await params).id);
+  const chat = parsed.success ? getStore().getChat(parsed.data) : undefined;
+  return { title: chat ? `${chat.title} · CV Builder` : "Chat not found · CV Builder" };
+}
+
 export default function ChatPage({ params }: PageProps<"/chats/[id]">) {
   return <Suspense fallback={<>
     <PageHeader trail={[{ label: "Home", href: "/" }, { label: "Loading…" }]} />
