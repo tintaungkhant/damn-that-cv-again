@@ -23,3 +23,4 @@ Implement [job-tracker scope](../spec.md#applied-job-tracker): SQLite migration,
 ## Comments
 
 - 2026-10-23: Planned. Jira-like means simple detail editing and activity history, not a board or configurable workflow.
+- 2026-10-23: User confirmed storage and Server Action test seams. Storage slice adds schema v5, validated job writes, immutable history, atomic combined activity, durable duplicate protection, ownership checks, and bounded SQL search/filter/pagination. Five focused tests cover restart, stable timestamp ties, invalid input, stale writes, wrong ownership, and injected transaction failure. Actions and UI follow. Existing Zod/SQLite dependencies suffice; see ADR-0001.

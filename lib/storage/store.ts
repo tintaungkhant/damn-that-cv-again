@@ -8,6 +8,7 @@ import { profileProposal, emptyProfile, applyProfileOperations, canReapply, pars
 
 import { buildSettings, defaultBuildSettings, cvRevisionAction, validateCvEvidence, type CvRevision } from "./build.ts";
 import { cvSchema, exportCv } from "./cv.ts";
+import { migrateJobs, jobStore } from "./jobs.ts";
 
 export const chatInput = z.object({
   category: z.enum(["profile", "build"]),
@@ -65,7 +66,7 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4) {
+    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5) {
       throw new Error("Database version is newer than this app supports.");
     }
     if (version === 0 || version === 1) {
@@ -119,6 +120,7 @@ export function openStore(path: string) {
         PRAGMA user_version = 4;
       `);
     }
+    if (Number(version) < 5) migrateJobs(db);
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
   } catch (error) {
@@ -128,6 +130,7 @@ export function openStore(path: string) {
   }
   const userId = "local-user";
   return {
+    ...jobStore(db, userId),
     userId,
     close() { db.close(); },
     listChats(): Chat[] {

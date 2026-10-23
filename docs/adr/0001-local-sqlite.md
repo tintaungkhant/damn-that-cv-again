@@ -63,3 +63,11 @@ Schema v4 adds `attachments`, owned by a source message with cascade deletion. O
 This is an additive local migration. Existing text messages, profile proposals/history, and CV data remain unchanged. Mixed old/new writers are not supported: older binaries reject v4 rather than opening it incorrectly. Rollback means restore a pre-upgrade database copy with the previous binary; do not lower `user_version` or drop attachment records on a database used by the new application. The app does not provide automated backup/restore.
 
 File preparation runs outside the Next bundle in a terminable Node worker, one upload at a time, with maintained format parsers and the limits in the workspace spec. A fixed loader imports the application-owned parser path at runtime; filenames never become paths. This avoids Turbopack rewriting parser-internal `require.resolve()` into a numeric module ID. The supported local runtime retains the full checkout and installed dependencies. Server Actions validate raw files, never client-provided prepared snapshots. Claude-specific block types remain in its adapter.
+
+## Ticket 12 extension: job applications
+
+Schema v5 adds independently owned jobs, append-only activity, and durable submission keys. Existing chat settings remain separate. Reuse the existing Node SQLite driver and Zod: prepared queries and transactions already provide the required storage behavior without another ORM or migration package. The application-specific history and optimistic version rules use direct SQL.
+
+Creation records a full initial snapshot. Effective edits retain complete old/new values. Status plus comment commits as one event with the job version and submission key; failed writes roll back all three. Keys bind to the normalized operation payload and owner, so identical retries succeed without another event while mismatched reuse fails. Field no-ops record a submission key but no activity or version change. Comment-only writes preserve fields and increment the version. SQLite timestamps and integer event IDs give deterministic chronological activity; lists use updated timestamp and ID with 25-row pagination.
+
+Migration is additive and preserves v4 data. Older binaries reject v5. Rollback requires a pre-upgrade database copy and the prior binary; never lower the schema version on a database used by the new application.
