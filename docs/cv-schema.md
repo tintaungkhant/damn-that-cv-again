@@ -1,10 +1,10 @@
-# Proposed CV JSON contract (Ticket 05)
+# CV JSON contract (Ticket 05)
 
-Status: implemented for review, awaiting user approval. This is not an agreed contract yet. Ticket 06 generation remains blocked.
+Status: approved by the user on 2026-10-23. Ticket 05 is complete; Ticket 06 generation may use this contract.
 
 The single source of truth is `lib/storage/cv.ts` (`cvSchema`, inferred `Cv`, and `exportCv`). No UI, generation tool, storage migration, or copy/download flow is added in this ticket.
 
-## Fields for approval
+## Approved fields
 
 | Field | Contract |
 | --- | --- |
@@ -42,7 +42,7 @@ Both files are synthetic internal documents. Their export output removes evidenc
 
 Behavior tests at the schema/module boundary cover examples, omitted fields, export, malformed content, evidence, versions, and unknown metadata. No browser or visual checks are needed.
 
-Review baseline: `f0c7b9d1d6ddcfc47b3ee991238ae3ef7b42020d`. Review performed inline following the repository's no-subagent rule. Standards: no outstanding findings. Spec: implementation and examples prepared; explicit user approval remains outstanding, so Ticket 05 is not resolved.
+Review baseline: `f0c7b9d1d6ddcfc47b3ee991238ae3ef7b42020d`. Review performed inline following the repository's no-subagent rule. Standards: no outstanding findings. Spec: implementation and examples meet the ticket requirements. The user approved the contract on 2026-10-23; Ticket 05 is resolved.
 
 Reused installed Zod 4.6.7, already required by the ticket and provider stack; no dependency added or handwritten validator. Consulted official API documentation at https://zod.dev/api for strict objects, discriminated unions, email, and protocol-restricted URLs. No Next.js behavior changed and no qualifying framework feedback arose.
 

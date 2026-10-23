@@ -48,6 +48,6 @@ Transport feasibility and live Server Action checks: `.scratch/v1/streaming/find
 
 Profile verification: `.scratch/v1/profile/findings.md`. To check the UI manually, paste rough notes into a profile chat. The confirmed profile must stay empty until approval. Compare **Before** and **After approval**, ask for a revision, approve, reopen, and try **History → Restore this revision**. If another chat changes a targeted block, refresh the profile and use **Ask to reconcile**. Profile refresh is explicit; another tab does not update automatically.
 
-## Proposed CV contract
+## CV contract
 
-Ticket 05 has a tested schema proposal, awaiting user approval before Ticket 06 generation. Review field definitions in `docs/cv-schema.md` and synthetic examples in `docs/examples/cv/`. `lib/storage/cv.ts` validates internal claims and removes evidence from export JSON; copy/download UI remains Ticket 07. No application behavior changes yet.
+Ticket 05 provides the tested CV schema approved by the user on 2026-10-23. Ticket 06 generation can use this contract. Review field definitions in `docs/cv-schema.md` and synthetic examples in `docs/examples/cv/`. `lib/storage/cv.ts` validates internal claims and removes evidence from export JSON; copy/download UI remains Ticket 07. No application behavior changes yet.
