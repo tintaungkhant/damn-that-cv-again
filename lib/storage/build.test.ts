@@ -99,7 +99,7 @@ test("v2 migration, reopen, profile changes and chat deletion preserve independe
     store.changeCvRevision({ chatId: chat.id, revisionId: first.id, action: "accept", expectedAcceptedId: null });
     store.close();
     const fixture = new DatabaseSync(path);
-    fixture.exec("DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; PRAGMA user_version = 2;");
+    fixture.exec("DROP TABLE attachments; DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; PRAGMA user_version = 2;");
     fixture.close();
     store = openStore(path);
     let workspace = store.getCvWorkspace(chat.id);

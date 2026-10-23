@@ -10,6 +10,8 @@ import { readProfileWorkspace } from "@/app/profile-actions";
 import type { Chat, Message } from "@/lib/storage/store";
 import type { ChatEvent } from "@/lib/ai/provider";
 import { ChatMarkdown } from "./markdown";
+import { AttachmentPicker, SavedAttachments } from "./attachments";
+import { selectionError } from "@/lib/attachments/types";
 import { CvAccepted, CvDraft, CvHistory, JobDetails, type CvWorkspace } from "./cv-review";
 import { ConfirmedProfile, ProfileHistory, ProfileProposals, type ProfileWorkspace } from "./profile-review";
 import { PageHeader } from "@/components/page-header";
@@ -71,6 +73,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
   const [profile, setProfile] = useState(initialProfile);
   const [messages, setMessages] = useState(initialMessages);
   const [content, setContent] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [partial, setPartial] = useState("");
   const [error, setError] = useState("");
   const [usage, setUsage] = useState<Usage>();
@@ -123,9 +126,17 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
       let finished = false;
       const proposed: ("profile" | "cv")[] = [];
       try {
-        const reply = await sendChatMessage(retryId ? { chatId, retryId } : { chatId, content });
+        const upload = new FormData();
+        if (!retryId) {
+          const invalid = selectionError(files);
+          if (invalid) { setError(invalid); return; }
+          upload.set("chatId", chatId); upload.set("content", content);
+          for (const file of files) upload.append("files", file);
+        }
+        const reply = await sendChatMessage(retryId ? { chatId, retryId } : upload);
+        if ("error" in reply) { setError(reply.error); return; }
         active.current = reply.messageId;
-        if (!retryId) setContent("");
+        if (!retryId) { setContent(""); setFiles([]); }
         setMessages(await readChatMessages(chatId));
         const reader = reply.stream.getReader();
         try {
@@ -145,7 +156,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
         }
       } catch {
         if (active.current) await cancelChatReply(chatId, active.current).catch(() => {});
-        setError("Could not finish the reply. Your saved messages remain available; retry when connected.");
+        setError("Upload or reply connection failed. Check the five-file, 10 MiB each and 20 MiB total limits, or use smaller files. Refresh the chat before resending; retry any saved message to avoid duplicates.");
       } finally {
         active.current = null;
         try { setMessages(await readChatMessages(chatId)); } catch { /* Keep the visible conversation during a connection failure. */ }
@@ -216,7 +227,8 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
               {messages.map(message => <MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={message.role === "user"}>
                 {message.role === "user" ? <MessageRow align="end">
                   <MessageContent>
-                    <Bubble variant="muted" align="end"><BubbleContent className="whitespace-pre-wrap break-words">{message.content}</BubbleContent></Bubble>
+                    {message.content && <Bubble variant="muted" align="end"><BubbleContent className="whitespace-pre-wrap break-words">{message.content}</BubbleContent></Bubble>}
+                    {!!message.attachments?.length && <SavedAttachments chatId={chatId} files={message.attachments} />}
                     {message.status === "failed" && <MessageFooter className="text-xs text-destructive">Reply failed. Your message is saved.</MessageFooter>}
                   </MessageContent>
                 </MessageRow> : <MessageRow>
@@ -257,9 +269,10 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
         {messages.length === 0 && <div className="flex scroll-fade-x scrollbar-none gap-2 overflow-x-auto overscroll-x-contain">
           {suggestions.map(prompt => <Button key={prompt} variant="outline" size="sm" className="shrink-0" disabled={!!composerDisabled} onClick={() => revise(prompt)}>{prompt}</Button>)}
         </div>}
-        <form ref={formRef} onSubmit={event => { event.preventDefault(); if (!composerDisabled && content.trim()) send(); }}>
+        <AttachmentPicker files={files} onChange={setFiles} disabled={!!composerDisabled} onError={setError} />
+        <form ref={formRef} onSubmit={event => { event.preventDefault(); if (!composerDisabled && (content.trim() || files.length)) send(); }}>
           <InputGroup>
-            <InputGroupTextarea ref={inputRef} aria-label="Message" value={content} onChange={event => setContent(event.target.value)} maxLength={100000} required disabled={!!composerDisabled}
+            <InputGroupTextarea ref={inputRef} aria-label="Message" value={content} onChange={event => setContent(event.target.value)} maxLength={100000} required={!files.length} disabled={!!composerDisabled}
               placeholder={build ? "Ask for a draft, discuss selections, or request changes…" : "Tell me about your experience…"} className="max-h-48 min-h-16 p-3"
               onKeyDown={event => {
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); formRef.current?.requestSubmit(); }
@@ -271,7 +284,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
                 {pending ? <InputGroupButton variant="outline" size="icon-sm" className="rounded-full" aria-label="Stop reply" disabled={!storedPending} onClick={() => {
                   const id = active.current;
                   if (id) startTransition(() => stop(id));
-                }}><SquareIcon /></InputGroupButton> : <InputGroupButton type="submit" variant="default" size="icon-sm" className="rounded-full" aria-label="Send message" disabled={!!composerDisabled || !content.trim()}><ArrowUpIcon /></InputGroupButton>}
+                }}><SquareIcon /></InputGroupButton> : <InputGroupButton type="submit" variant="default" size="icon-sm" className="rounded-full" aria-label="Send message" disabled={!!composerDisabled || (!content.trim() && !files.length)}><ArrowUpIcon /></InputGroupButton>}
               </div>
             </InputGroupAddon>
           </InputGroup>

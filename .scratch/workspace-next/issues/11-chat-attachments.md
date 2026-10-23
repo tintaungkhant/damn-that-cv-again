@@ -1,7 +1,8 @@
 # 11: Attach files to profile and build chats
 
 Status: ready-for-agent
-Blocked by: 10
+Blocked by: 10 (complete)
+Completed: 2026-10-23
 
 ## Goal
 
@@ -23,13 +24,13 @@ Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's veri
 
 ## Acceptance
 
-- [ ] All four format families work with optional message text, survive restart, and reach provider context after reopen and retry.
-- [ ] Type, signature, encoding, size, count, corrupt/encrypted document, cross-chat access, and context-limit failures are tested.
-- [ ] DOCX text-only notice, image-only DOCX rejection, ZIP expansion/entry bounds, parser timeout, animation rejection, and cumulative replay limits are covered.
-- [ ] Failed upload leaves no partial message/files; failed reply retains the saved attachments; retry creates no duplicates.
-- [ ] Binary downloads match original bytes and deleting a chat removes only its attachments.
-- [ ] Existing text-only chats, profile approval, CV acceptance, export, and failure behavior still pass.
-- [ ] Behavior tests, typecheck, lint, build, docs, and user manual-check instructions accompany each completed chunk.
+- [x] All four format families work with optional message text, survive restart, and reach provider context after reopen and retry.
+- [x] Type, signature, encoding, size, count, corrupt/encrypted document, cross-chat access, and context-limit failures are tested.
+- [x] DOCX text-only notice, image-only DOCX rejection, ZIP expansion/entry bounds, parser timeout, animation rejection, and cumulative replay limits are covered.
+- [x] Failed upload leaves no partial message/files; failed reply retains the saved attachments; retry creates no duplicates.
+- [x] Binary downloads match original bytes and deleting a chat removes only its attachments.
+- [x] Existing text-only chats, profile approval, CV acceptance, export, and failure behavior still pass.
+- [x] Behavior tests, typecheck, lint, build, docs, and user manual-check instructions accompany each completed chunk.
 
 ## Comments
 
@@ -38,3 +39,5 @@ Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's veri
 - 2026-10-23: Storage slice complete: additive v4 migration, atomic attachment/message persistence, metadata-only reads, scoped binary downloads, immutable retry and cascade deletion. Seven focused storage tests, typecheck, lint, and build pass. UI/provider integration follows; uploads are not exposed yet. Manual acceptance follows the final integration instructions.
 
 - 2026-10-23: Backend slice complete: selected production parser dependencies, single preparation slot, terminable 15-second workers, format/archive/image validation, native Claude mapping, immutable replay and cumulative context guards. Five new service tests plus the adapter mapping test pass; existing chat/provider tests, typecheck, lint and production build pass. User chose existing storage and provider/service test boundaries only. Manual UI scenarios will accompany integration.
+
+- 2026-10-23: Completed integration and inline Standards/Spec review. Composer selection/removal, DOCX notice, attachment-only send, validated actions and saved binary downloads are implemented. All 62 regression tests pass, as do focused final guards, typecheck, lint and build. Real production actions plus two live Claude calls verified all formats, matching download hashes and restart replay in an isolated database. Fixed a Turbopack worker-bundling incompatibility. See [implementation evidence](../attachments/integration.md) and [user manual checks](../../../docs/attachment-checks.md). No browser checks or personal-database replacement occurred; visual acceptance remains user-run.

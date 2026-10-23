@@ -24,7 +24,7 @@ export function selectionError(files: readonly { name: string; size: number; typ
     if (!file.name || file.name.length > 255 || /[\x00-\x1f\x7f/\\]/.test(file.name)) return "Use a filename of 1–255 characters without path separators or control characters.";
     if (!file.size || file.size > 10 * MiB) return `${file.name}: files must be between 1 byte and 10 MiB.`;
     const extension = file.name.split(".").at(-1)?.toLowerCase();
-    if (!extension || !(extension in mediaTypes)) return `${file.name}: use PDF, DOCX, UTF-8 TXT/MD, PNG, JPEG, or WebP.`;
+    if (!extension || !Object.hasOwn(mediaTypes, extension)) return `${file.name}: use PDF, DOCX, UTF-8 TXT/MD, PNG, JPEG, or WebP.`;
     const expected = mediaTypes[extension as keyof typeof mediaTypes];
     if (file.type && file.type !== expected && !(extension === "md" && file.type === "text/plain")) return `${file.name}: declared type does not match its extension.`;
   }

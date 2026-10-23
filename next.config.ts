@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
     serverActions: { bodySizeLimit: "21mb" },
   },
+  outputFileTracingIncludes: { "/*": ["./lib/attachments/parser.mjs"] },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

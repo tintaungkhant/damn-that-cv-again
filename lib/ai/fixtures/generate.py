@@ -33,6 +33,7 @@ def pdf(name, text=None, scan=False, encrypt=None):
 pdf("text.pdf", "PDF-ORBIT-8462: Fictional engineer builds reliable queues.")
 pdf("scan.pdf", scan=True)
 pdf("encrypted.pdf", "SECRET-SHOULD-NOT-BE-READ", encrypt=StandardEncryption("fictional-password"))
+pdf("encrypted-empty.pdf", "SECRET-SHOULD-NOT-BE-READ", encrypt=StandardEncryption("", ownerPassword="fictional-owner"))
 (root / "corrupt.pdf").write_bytes(b"%PDF-1.7\nnot a readable document")
 (root / "notes.txt").write_text("TEXT-MAPLE-3187: Fictional engineer. Unicode: \u0e44\u0e17\u0e22.", encoding="utf-8")
 (root / "notes.md").write_text("# MARKDOWN-BIRCH-8041\n\nFictional career notes.", encoding="utf-8")
@@ -77,3 +78,10 @@ for _ in range(101):
     output.drawString(72, 720, "Fictional page")
     output.showPage()
 output.save()
+
+# Mark a fictional DOCX entry encrypted without including any password or executable content.
+raw = bytearray((root / "career.docx").read_bytes())
+struct.pack_into("<H", raw, 6, struct.unpack_from("<H", raw, 6)[0] | 1)
+central = raw.index(b"PK\x01\x02")
+struct.pack_into("<H", raw, central + 8, struct.unpack_from("<H", raw, central + 8)[0] | 1)
+(root / "encrypted.docx").write_bytes(raw)

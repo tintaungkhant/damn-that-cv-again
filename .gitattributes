@@ -1,0 +1,2 @@
+# Preserve PDF offsets and signatures across Windows checkouts; avoid text diffs.
+lib/ai/fixtures/*.pdf binary

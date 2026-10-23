@@ -9,4 +9,4 @@ Ticket 02 moves the app to a Sidebar shell with separate Home, chat (`/chats/[id
 Verification: typecheck, lint, existing behavior tests, and production build. User performs visual acceptance per `.ai/rules/testing.md`; see `issues/01-shadcn-conversation.md`, `issues/02-app-shell-and-ai-elements.md`, and README.md.
 
 
-Follow-up scope (2026-10-23): the original upload exclusion above applies to the delivered UI slice. Attachments are now planned in `.scratch/workspace-next/spec.md`, Tickets 10–11; Ticket 13 supersedes the unbounded sidebar and adds desktop workspace hide/show. These follow-up changes are not implemented yet.
+Follow-up scope (2026-10-23): the original upload exclusion above applies to the delivered UI slice. Attachments are now planned in `.scratch/workspace-next/spec.md`, Tickets 10–11; Ticket 13 supersedes the unbounded sidebar and adds desktop workspace hide/show. Attachment controls are implemented; Ticket 13 navigation/panel changes remain planned.

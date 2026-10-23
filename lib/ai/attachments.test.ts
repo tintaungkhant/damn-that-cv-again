@@ -63,7 +63,7 @@ test("uploads reject invalid files and fields before saving or contacting the pr
   try {
     for (const [name, pattern] of [
       ["corrupt.pdf", /corrupt|signature/i], ["encrypted.pdf", /Encrypted/i],
-      ["corrupt.docx", /corrupt/i], ["corrupt.png", /corrupt/i], ["invalid.txt", /UTF-8/i],
+      ["encrypted-empty.pdf", /Encrypted/i], ["corrupt.docx", /corrupt/i], ["corrupt.png", /corrupt/i], ["invalid.txt", /UTF-8/i],
       ["image-only.docx", /PDF or attach images.*text only/i],
     ] as const) {
       const result = await service.upload(upload(chat.id, [name]));
@@ -75,6 +75,7 @@ test("uploads reject invalid files and fields before saving or contacting the pr
       [[8, 8, 5].map(size => new File([new Uint8Array(size * 1024 * 1024)], "notes.txt")), /20 MiB/],
       [[new File([""], "empty.txt")], /1 byte/],
       [[new File(["notes"], "notes.exe")], /use PDF/],
+      [[new File(["notes"], "notes.constructor")], /use PDF/],
       [[new File(["notes"], "notes.txt", { type: "image/png" })], /declared type/],
       [[new File([readFileSync(new URL("./fixtures/image.png", import.meta.url))], "fake.pdf")], /signature/],
       [[new File(["a\0b"], "binary.txt")], /binary/],
@@ -106,7 +107,7 @@ test("upload safety bounds reject expanded/oversized archives, animations, unrea
   const service = createChatService(store, { async *stream() { assert.fail("Invalid files must not reach provider"); } });
   try {
     for (const [name, pattern] of [
-      ["expanded.docx", /20 MiB/], ["entries.docx", /1,000/], ["lying-size.docx", /corrupt/],
+      ["encrypted.docx", /Encrypted DOCX/], ["expanded.docx", /20 MiB/], ["entries.docx", /1,000/], ["lying-size.docx", /corrupt/],
       ["animated.webp", /Animated/], ["wide.png", /8000/], ["too-many-pages.pdf", /100 pages/], ["xml-corrupt.docx", /corrupt/],
     ] as const) {
       const result = await service.upload(upload(chat.id, [name]));
@@ -186,4 +187,33 @@ test("reconstructed history enforces cumulative pages, images and encoded bytes 
       assert.deepEqual(store.getMessages(chat.id), before);
     } finally { store.close(); }
   }
+});
+
+test("cancelling an attachment reply preserves the saved files and retries without another upload", async () => {
+  const store = openStore(":memory:");
+  const chat = store.createChat({ category: "profile", title: "Cancel" });
+  const requests: ProviderRequest[] = [];
+  const service = createChatService(store, { async *stream(request, signal) {
+    requests.push(request);
+    yield { type: "text-delta", text: requests.length === 1 ? "Partial" : "Complete" };
+    if (requests.length === 1) await new Promise<void>(resolve => signal.addEventListener("abort", () => resolve(), { once: true }));
+    yield { type: "done" };
+  }});
+  try {
+    const first = await service.upload(upload(chat.id, ["notes.txt"]));
+    assert.ok(!("error" in first));
+    const reader = first.stream.getReader();
+    await reader.read();
+    service.cancel(chat.id, first.messageId);
+    await reader.cancel();
+    const saved = store.getMessages(chat.id)[0];
+    assert.equal(saved.status, "failed"); assert.equal(saved.attachments!.length, 1);
+    const duplicate = await service.upload(upload(chat.id, ["notes.txt"], "Another message"));
+    assert.ok("error" in duplicate);
+    assert.equal(store.getMessages(chat.id).length, 1);
+    await consume(service.send({ chatId: chat.id, retryId: first.messageId }));
+    assert.deepEqual(requests[1], requests[0]);
+    assert.equal(store.getMessages(chat.id).length, 2);
+    assert.deepEqual(store.getMessages(chat.id)[0].attachments, saved.attachments);
+  } finally { store.close(); }
 });

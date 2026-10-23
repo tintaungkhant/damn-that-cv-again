@@ -1,0 +1,16 @@
+# Chat attachment manual checks
+
+Ticket 11 implements attachments in both profile and Build CV chats. Browser and visual checks remain user-run under `.ai/rules/testing.md`.
+
+Start the app from the repository root with `bun run dev`, or `bun run build` then `bun run start`. Open http://localhost:3800. Keep the complete checkout and installed `node_modules`: preparation runs `lib/attachments/parser.mjs` in a separate Node worker. Run one app process against the database.
+
+1. Open a profile chat. Choose **Attach files**, select PDF (including a scanned PDF), DOCX, TXT/MD, and PNG/JPEG/WebP across separate messages. Five files maximum per message. Remove one selected file and add it again. Send a file without message text; then send files with accompanying text. Enter sends; Shift + Enter adds a line.
+2. Select a DOCX. Confirm the text-only notice appears before sending. Ask about a table's text. Embedded images and rendered layout are not analyzed. Try `lib/ai/fixtures/image-only.docx`; it must reject with PDF/image guidance, preserving unsent text and selections without creating a message.
+3. Verify each saved file shows its name, type, size, and download control. Download and compare with the original. Reopen the chat, ask about an earlier file, restart the app, and repeat. Earlier attachments remain assistant context.
+4. Stop a reply containing files. Use **Retry saved message**. Files and the source user message must appear once. A provider or context error must retain the saved files. A validation error must retain the composer inputs and save nothing. If a connection/upload error occurs, refresh before resending and retry any saved message.
+5. Try unsupported files, a mismatched extension, invalid UTF-8, corrupt/encrypted PDFs, an animated WebP, six files, a file over 10 MiB, and combined files over 20 MiB. Each error must be clear. Client checks give early feedback; the server also validates direct requests. Whole-chat limits can require a shorter chat even when the newest upload is small.
+6. Repeat uploads in a Build CV chat. Existing job settings, generation, profile proposal approval, CV acceptance, and JSON export must still work. Files cannot approve profile changes or accept CVs. New career facts still require explicit profile approval before CV evidence can use them.
+7. Delete a disposable chat. Its downloads must become unavailable. Files and confirmed/accepted documents in other chats must remain available. Keep any original documents you need before deleting.
+8. Check keyboard access, long filenames, narrow screens, selected-file removal, and downloaded filenames. Uploads should disable selection/removal while preparing or replying. The workspace panel and mobile sheet should behave as before; hide/show and navigation changes belong to Ticket 13.
+
+Limits: five files, 10 MiB each, 20 MiB combined; UTF-8 extracted text at most 1 MiB per file; no animated images; image dimensions at most 8000 × 8000; DOCX expanded data at most 20 MiB/1,000 entries. Preparation allows one upload at a time and terminates each file after 15 seconds. Entire reconstructed chat: at most 100 PDF pages, 20 images, and 30,000,000 serialized context bytes. No silent truncation. Provider token limits can still reject a request.

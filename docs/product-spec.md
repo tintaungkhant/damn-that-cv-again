@@ -139,15 +139,17 @@ Each user message makes one Agent SDK `query()` call:
 
 Retired from version one by the user on 2026-10-23 (Ticket 08, wontfix). CV JSON export remains supported. There is no built-in application backup or restore. A one-time local database archive for replacing development test data is maintenance, not a product feature.
 
-## Next workspace increment (planned)
+## Next workspace increment
 
-On 2026-10-23 the user approved planning file attachments (PDF, DOCX, text, and images), a simple applied-job tracker with comments and change history, scalable chat navigation, and a collapsible/expandable right workspace panel. These features are not implemented yet. Detailed scope, defaults, acceptance, and delivery order: `.scratch/workspace-next/spec.md`; Tickets 10–14 in `.scratch/workspace-next/issues/`. This increment supersedes the original exclusions for document uploads and application tracking only. Job URLs are stored links, not URL imports or scraping.
+On 2026-10-23 the user approved planning file attachments (PDF, DOCX, text, and images), a simple applied-job tracker with comments and change history, scalable chat navigation, and a collapsible/expandable right workspace panel. Ticket 11 attachments are implemented; job tracking and navigation/panel changes remain planned. Detailed scope, defaults, acceptance, and delivery order: `.scratch/workspace-next/spec.md`; Tickets 10–14 in `.scratch/workspace-next/issues/`. This increment supersedes the original exclusions for document uploads and application tracking only. Job URLs are stored links, not URL imports or scraping.
 
-Ticket 10 feasibility is complete: `.scratch/workspace-next/attachments/findings.md`. Native PDF (including scanned) and image blocks work through the installed subscription adapter with async input; DOCX uses explicitly labeled text-only extraction, and image-only DOCX must reject. SQLite BLOBs, 20 MiB combined multipart uploads with a 21 MiB action-body limit, and typed-array downloads passed isolated production transport probes. Ticket 11 owns production integration and the documented validation/context bounds; Ticket 11 has added the v4 storage migration, worker validation, provider replay, and the 21 MiB action-body configuration; upload/download UI integration is still in progress.
+Ticket 10 feasibility is complete: `.scratch/workspace-next/attachments/findings.md`. Ticket 11 adds validated upload/download Server Actions, the composer and saved-file controls in both chat categories, and additive SQLite v4 persistence. Native PDF (including scans) and image blocks reach the subscription adapter; DOCX is explicitly text only, and image-only DOCX rejects. Originals and immutable prepared text persist across restart and retry. Normal chat reads return metadata only. Message/files save atomically; chat ownership controls download/deletion. Existing approval, acceptance, cancellation, and export rules remain.
+
+Uploads allow five files, 10 MiB each and 20 MiB combined under a 21 MiB Server Action body limit. Maintained parsers validate signatures, encodings, corrupt/encrypted documents, images, and bounded DOCX archives in a single preparation slot with terminable 15-second workers. Whole-chat replay is bounded to 100 PDF pages, 20 images and 30,000,000 serialized context bytes. Complete bounds are in the increment spec. Structured errors preserve composer input; transport failures explain limits and advise refresh/retry of saved messages. No silent file dropping or truncation. Evidence: `.scratch/workspace-next/attachments/integration.md`; user-run UI checks: `docs/attachment-checks.md`.
 
 ## Original version-one exclusions
 
-No application authentication, template generation, HTML/CSS CV rendering, PDF output, document uploads, URL imports, job scraping, application tracking, vector search, provider selection, provider switching, API-key authentication, or additional provider adapters. Image and document capabilities were discussed as provider capabilities, not approved scope additions.
+No application authentication, template generation, HTML/CSS CV rendering, PDF output, document uploads, URL imports, job scraping, application tracking, vector search, provider selection, provider switching, API-key authentication, or additional provider adapters. The subsequent workspace increment above supersedes the original document-upload and application-tracking exclusions; attachments are now implemented.
 
 ## Delivery order
 
@@ -182,5 +184,5 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 - Resolved: Node `node:sqlite` with transactional `PRAGMA user_version` migrations; see `docs/adr/0001-local-sqlite.md`.
 - Resolved: Ticket 09 pins `claude-sonnet-5-5` after a paired realistic-input Sonnet/Haiku trial covering a full fictional career, long conversation and CV export. Sonnet produced valid, relevant output with lower latency and fewer output tokens in this trial. Measurements, limitations and acceptance audit: `.scratch/v1/hardening/findings.md`.
 
-These details must preserve the agreed scope. No application implementation is included in this specification change. The planned workspace increment is specified separately above.
+These decisions preserve the original scope except for the explicitly approved workspace increment described above.
 

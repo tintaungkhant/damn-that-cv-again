@@ -23,8 +23,9 @@ export async function prepareUpload(form: FormData): Promise<PreparedAttachment[
       const bytes = new Uint8Array(await file.arrayBuffer());
       const result = await new Promise<Pick<PreparedAttachment, "text" | "pages" | "preparationVersion">>((resolve, reject) => {
         // Keep this runtime file outside Next's bundle so native parsers and worker termination work in dev and production.
-        const worker = new Worker(join(process.cwd(), "lib", "attachments", "parser.mjs"), {
-          workerData: { name: file.name, mediaType, bytes }, resourceLimits: { maxOldGenerationSizeMb: 256 },
+        const worker = new Worker('const { workerData } = require("node:worker_threads"); import(require("node:url").pathToFileURL(workerData.parserPath).href);', {
+          eval: true,
+          workerData: { parserPath: join(process.cwd(), "lib", "attachments", "parser.mjs"), name: file.name, mediaType, bytes }, resourceLimits: { maxOldGenerationSizeMb: 256 },
         });
         let settled = false;
         const finish = (error?: Error, value?: Pick<PreparedAttachment, "text" | "pages" | "preparationVersion">) => {
