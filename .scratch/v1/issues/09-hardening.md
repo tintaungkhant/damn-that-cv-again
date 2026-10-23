@@ -1,6 +1,6 @@
 # 09: Hardening and model choice
 
-Status: ready-for-human
+Status: resolved
 Blocked by: 06, 07
 
 ## Goal
@@ -28,3 +28,6 @@ Check every acceptance condition end to end and choose the model.
 - Manual acceptance remains open by design: the user asked to explore the trial workspace, and `.ai/rules/testing.md` prohibits agent browser/visual testing. The first acceptance box stays unchecked until layout, clipboard/download interactions and editorial quality are reviewed. [Trial guide](../../../docs/trial-guide.md); [results and acceptance audit](../hardening/findings.md).
 
 - 2026-10-23: User confirmed Tickets 01–09 done and requested the next increment. This closes the pending user acceptance above; no agent browser verification was performed. Ticket 08 remains retired. Follow-up planning: `.scratch/workspace-next/spec.md`.
+
+- 2026-10-23: Status set to `resolved` during docs cleanup; every acceptance box was already ticked.
+- 2026-10-23: The user reset `data/app.sqlite` to start from an empty workspace. The fictional trial workspace is no longer installed; `data/trial-workspaces/` and `data/archives/` were kept.

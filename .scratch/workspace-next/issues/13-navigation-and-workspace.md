@@ -1,6 +1,6 @@
 # 13: Scale chat navigation and collapse the workspace
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 12 (complete)
 
 ## Goal
@@ -25,3 +25,4 @@ Implement [navigation and panel scope](../spec.md#navigation-and-document-panel)
 - 2026-10-23: Planned. Visual acceptance belongs to the user under `.ai/rules/testing.md`.
 - 2026-10-23: Ticket 12 implemented Jobs navigation and application tracking. Reuse the existing Jobs sidebar link while bounding chat navigation; do not add a second Jobs entry.
 - 2026-10-23: Implemented. Schema v6 adds chat activity time; `listChats` pages, searches, and limits in SQL (`lib/storage/store.ts`). `/chats?category=` pages, primary CV/Profile chat links, and five recent chats per category with **View all** (`app/chats/page.tsx`, `components/app-sidebar.tsx`). Desktop hide/show uses a collapsible Resizable panel with a validated local preference (`lib/workspace-preference.ts`, `components/chats/chat-workspace.tsx`). Tests, typecheck, lint, and build pass. User-run visual checks: `docs/navigation-checks.md`; the two user acceptance boxes stay open until the user confirms.
+- 2026-10-23: Status set to `ready-for-human`. The two open user checks are covered by the Ticket 14 checklist, `docs/workspace-acceptance.md`.

@@ -1,5 +1,7 @@
 # Explore the fictional trial workspace
 
+On 2026-10-23 the user reset `data/app.sqlite` to start from an empty workspace, so this trial workspace is no longer installed. The guide is kept as a record of the Ticket 09 trial. Its trial databases remain in the ignored `data/trial-workspaces/` folder.
+
 Open http://localhost:3800. All career data belongs to fictional **Alex Morgan**, not the app owner. The previous test database was archived locally before replacement.
 
 ## Suggested route

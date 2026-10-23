@@ -1,6 +1,6 @@
 # 01: Agent SDK feasibility spike
 
-Status: ready-for-agent
+Status: resolved
 
 ## Goal
 
@@ -28,3 +28,5 @@ A throwaway script outside the app, under `.scratch/v1/spike/`. It must:
 ## Comments
 
 Spike done on 2026-10-23. Verdict: go. Script and findings are in `.scratch/v1/spike/` (`spike.ts`, `findings.md`). Two runs with no API key passed every acceptance check. First text delta came at about 2.4 to 3.2 s and the full turn took about 12.5 to 13.4 s on `claude-opus-5-5`.
+
+- 2026-10-23: Status set to `resolved` during docs cleanup; every acceptance box was already ticked.

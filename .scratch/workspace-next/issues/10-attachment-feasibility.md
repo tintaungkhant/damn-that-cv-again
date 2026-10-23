@@ -1,6 +1,6 @@
 # 10: Verify attachment input and transport
 
-Status: ready-for-agent
+Status: resolved
 Type: research
 Completed: 2026-10-23
 
@@ -23,3 +23,5 @@ Follow [scope](../spec.md#chat-attachments). Read installed Next.js Server Actio
 
 - 2026-10-23: Planned. Required formats are PDF, DOCX, text, and images. No implementation yet.
 - 2026-10-23: Completed. [Findings, package evidence, and reproduction](../attachments/findings.md). Distinct markers passed for native text/scanned PDFs, three image formats, DOCX text/table cells, and UTF-8 TXT/Markdown through the existing adapter with a scratch-only async-input wrapper. Reopened/retried/rebuilt context passed. Production Server Action probes verified 20 MiB uploads, byte-identical typed-array downloads, SQLite BLOB restart persistence, ownership rejection, and limit enforcement. DOCX is explicitly text-only; image-only DOCX must reject. Full suite: 53 passed; typecheck, lint, and production build passed. Production features remain Ticket 11.
+
+- 2026-10-23: Status set to `resolved` during docs cleanup; every acceptance box was already ticked.

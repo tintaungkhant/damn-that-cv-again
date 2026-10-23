@@ -1,6 +1,6 @@
 # 12: Track applied jobs and activity
 
-Status: ready-for-agent
+Status: resolved
 Completed: 2026-10-23 (visual acceptance remains user-run)
 
 ## Goal
@@ -28,3 +28,5 @@ Implement [job-tracker scope](../spec.md#applied-job-tracker): SQLite migration,
 - 2026-10-23: Completed Server Actions, `/jobs` list/create, `/jobs/[id]` field/activity forms and plain-text history, and Jobs sidebar navigation. Installed Native Select and Pagination through the shadcn CLI after checking its catalog. Seven new storage/action tests pass; the full suite passes all 69 tests. Typecheck, lint and production build pass. Legacy migration fixtures now remove v5 tables before simulating older schemas. See [manual checks and evidence](../../../docs/job-tracker-checks.md). No browser/visual checks ran; user visual acceptance remains pending.
 - 2026-10-23: Inline Standards/Spec review against pre-ticket commit `1ba1e5a` found no remaining issues after correcting refreshed status selection, uncertain retry keys/versions, and form identity across job navigation. Reused shadcn FieldSet and Empty primitives. Final review evidence is in `docs/job-tracker-checks.md`. Next.js feedback pass found no qualifying framework friction during this ticket.
 - 2026-10-23: User asked for a conventional admin-dashboard UI. `/jobs` is now a shadcn Table (installed with the CLI) with search/status toolbar and a **New job** dialog. `/jobs/[id]` has a two-column layout: chronological activity timeline with the update composer below, a Details side panel, and an **Edit** dialog that stays open on errors to keep unsent input. Storage and Server Actions are unchanged; tests, typecheck, lint and build pass. Visual acceptance is user-run (`docs/job-tracker-checks.md`).
+
+- 2026-10-23: Status set to `resolved` during docs cleanup; every acceptance box was already ticked.

@@ -1,6 +1,6 @@
 # 11: Attach files to profile and build chats
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 10 (complete)
 Completed: 2026-10-23
 
@@ -41,3 +41,5 @@ Implement [attachment scope](../spec.md#chat-attachments) using Ticket 10's veri
 - 2026-10-23: Backend slice complete: selected production parser dependencies, single preparation slot, terminable 15-second workers, format/archive/image validation, native Claude mapping, immutable replay and cumulative context guards. Five new service tests plus the adapter mapping test pass; existing chat/provider tests, typecheck, lint and production build pass. User chose existing storage and provider/service test boundaries only. Manual UI scenarios will accompany integration.
 
 - 2026-10-23: Completed integration and inline Standards/Spec review. Composer selection/removal, DOCX notice, attachment-only send, validated actions and saved binary downloads are implemented. All 62 regression tests pass, as do focused final guards, typecheck, lint and build. Real production actions plus two live Claude calls verified all formats, matching download hashes and restart replay in an isolated database. Fixed a Turbopack worker-bundling incompatibility. See [implementation evidence](../attachments/integration.md) and [user manual checks](../../../docs/attachment-checks.md). No browser checks or personal-database replacement occurred; visual acceptance remains user-run.
+
+- 2026-10-23: Status set to `resolved` during docs cleanup; every acceptance box was already ticked.
