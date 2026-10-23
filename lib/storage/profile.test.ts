@@ -95,7 +95,7 @@ test("v1 migration preserves chats and profiles; proposal approval survives rest
   store.completeTurn(turn.id, "Preserved reply");
   store.close();
   const old = new DatabaseSync(path);
-  old.exec("DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; DROP TABLE attachments; DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; DROP TABLE profile_proposals; DROP TABLE profile_block_ids; PRAGMA user_version = 1;");
+  old.exec("DROP INDEX chats_user_updated; ALTER TABLE chats DROP COLUMN updated_at; DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; DROP TABLE attachments; DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; DROP TABLE profile_proposals; DROP TABLE profile_block_ids; PRAGMA user_version = 1;");
   old.prepare("INSERT INTO profile_revisions(id, user_id, markdown) VALUES ('legacy', 'local-user', ?)").run("<!-- id:p-old -->\n## Old role\n\nEngineer.\n\n<!-- id:p-open-questions -->\n## Open questions\n\nNone.");
   old.close();
   try {

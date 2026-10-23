@@ -295,7 +295,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
 
   const status = pending ? <span role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner />Replying</span> : null;
   return <>
-    <PageHeader trail={[{ label: build ? "CV builds" : "Profile chats", href: "/" }, { label: chat.title }]}>
+    <PageHeader trail={[{ label: build ? "CV chats" : "Profile chats", href: `/chats?category=${chat.category}` }, { label: chat.title }]}>
       {status}
       <Badge variant="secondary" className="hidden sm:inline-flex">{build ? "Build CV" : "Profile"}</Badge>
       {!wide && <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}><PanelRightIcon />Workspace{attention.length > 0 && <Badge className="h-4 min-w-4 px-1">{attention.length}</Badge>}</Button>}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { Trash2Icon } from "lucide-react";
 import { createChat, deleteChat } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,8 +61,8 @@ export function NewChatDialog({ category = "profile", children }: { category?: C
   </Dialog>;
 }
 
-export function DeleteChatDialog({ id, category, title, open, onOpenChange }: {
-  id: string; category: Category; title: string; open: boolean; onOpenChange: (open: boolean) => void;
+export function DeleteChatDialog({ id, category, title, open, onOpenChange, returnToList = false }: {
+  id: string; category: Category; title: string; open: boolean; onOpenChange: (open: boolean) => void; returnToList?: boolean;
 }) {
   const [state, action, pending] = useActionState(
     async (_: { error: string } | null, data: FormData) => deleteChat(data), null,
@@ -80,9 +81,18 @@ export function DeleteChatDialog({ id, category, title, open, onOpenChange }: {
         <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="confirmed" value={category === "build" ? "true" : "false"} />
+          {returnToList && <input type="hidden" name="returnTo" value={`/chats?category=${category}`} />}
           <Button type="submit" variant="destructive" disabled={pending}>{pending ? "Deleting…" : "Delete chat"}</Button>
         </form>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>;
+}
+
+export function DeleteChatButton({ id, category, title }: { id: string; category: Category; title: string }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button variant="ghost" size="icon-sm" aria-label={`Delete ${title}`} onClick={() => setOpen(true)}><Trash2Icon /></Button>
+    <DeleteChatDialog id={id} category={category} title={title} open={open} onOpenChange={setOpen} returnToList />
+  </>;
 }

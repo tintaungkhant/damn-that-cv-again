@@ -57,7 +57,7 @@ export default function Home() {
 
 async function RecentChats() {
   await io();
-  const chats = getStore().listChats().slice(0, 8);
+  const chats = getStore().listChats({ limit: 8 }).items;
   if (chats.length === 0) return <Empty className="border border-dashed">
     <EmptyHeader><EmptyTitle>No chats yet</EmptyTitle><EmptyDescription>Start with a profile chat so later CVs have confirmed facts to draw on.</EmptyDescription></EmptyHeader>
   </Empty>;

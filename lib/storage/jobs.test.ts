@@ -118,7 +118,7 @@ test("v4 migration preserves existing chats, attachments and separate build sett
     const attachmentId = store.getMessages(chat.id)[0].attachments![0].id;
     store.close();
     const legacy = new DatabaseSync(path);
-    legacy.exec("DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; PRAGMA user_version = 4");
+    legacy.exec("DROP INDEX chats_user_updated; ALTER TABLE chats DROP COLUMN updated_at; DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; PRAGMA user_version = 4");
     legacy.close();
     store = openStore(path);
     const job = store.createJob({ operationId: randomUUID(), title: "Unrelated", url: "https://example.com", description: "Tracker description" });

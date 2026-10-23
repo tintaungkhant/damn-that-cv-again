@@ -14,13 +14,19 @@ export const chatInput = z.object({
   category: z.enum(["profile", "build"]),
   title: z.string().trim().min(1).max(120),
 });
+export const chatListInput = z.object({
+  category: chatInput.shape.category.optional(),
+  search: z.string().trim().max(120).default(""),
+  page: z.number().int().min(1).max(1_000_000).default(1),
+  limit: z.number().int().min(1).max(25).default(25),
+}).strict();
 const chatId = z.uuid();
 export type Message = { id: string; role: "user" | "assistant"; content: string; status: "pending" | "complete" | "failed"; attachments?: AttachmentMetadata[] };
 export const turnInput = z.union([
   z.object({ chatId: z.uuid(), content: z.string().trim().max(100_000), attachments: z.array(preparedAttachment).max(5).optional() }).strict().refine(input => input.content.length > 0 || !!input.attachments?.length, "Write a message or attach a file.").refine(input => (input.attachments ?? []).reduce((sum, file) => sum + file.bytes.length, 0) <= 20 * 1024 * 1024, "Combined files exceed 20 MiB."),
   z.object({ chatId: z.uuid(), retryId: z.uuid() }).strict(),
 ]);
-export type Chat = { id: string; category: "profile" | "build"; title: string; created_at: string };
+export type Chat = { id: string; category: "profile" | "build"; title: string; created_at: string; updated_at: string };
 
 export function openStore(path: string) {
   mkdirSync(dirname(path), { recursive: true });
@@ -66,7 +72,7 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5) {
+    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6) {
       throw new Error("Database version is newer than this app supports.");
     }
     if (version === 0 || version === 1) {
@@ -121,6 +127,15 @@ export function openStore(path: string) {
       `);
     }
     if (Number(version) < 5) migrateJobs(db);
+    if (Number(version) < 6) {
+      // SQLite cannot add a column with a non-constant default, so backfill from the latest message.
+      db.exec(`
+        ALTER TABLE chats ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
+        UPDATE chats SET updated_at = max(created_at, coalesce((SELECT max(created_at) FROM messages WHERE chat_id = chats.id), ''));
+        CREATE INDEX chats_user_updated ON chats(user_id, category, updated_at DESC, id DESC);
+        PRAGMA user_version = 6;
+      `);
+    }
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
   } catch (error) {
@@ -133,11 +148,16 @@ export function openStore(path: string) {
     ...jobStore(db, userId),
     userId,
     close() { db.close(); },
-    listChats(): Chat[] {
-      return db.prepare("SELECT id, category, title, created_at FROM chats WHERE user_id = ? ORDER BY created_at DESC, id DESC").all(userId) as Chat[];
+    listChats(input: unknown) {
+      const value = chatListInput.parse(input);
+      const where = "user_id = ? AND (? IS NULL OR category = ?) AND (? = '' OR instr(lower(title), lower(?)) > 0)";
+      const args = [userId, value.category ?? null, value.category ?? null, value.search, value.search];
+      const total = Number(db.prepare(`SELECT count(*) AS total FROM chats WHERE ${where}`).get(...args)!.total);
+      const items = db.prepare(`SELECT id, category, title, created_at, updated_at FROM chats WHERE ${where} ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?`).all(...args, value.limit, (value.page - 1) * value.limit) as Chat[];
+      return { items: items.map(item => ({ ...item })), total, page: value.page };
     },
     getChat(id: string): Chat | undefined {
-      return db.prepare("SELECT id, category, title, created_at FROM chats WHERE id = ? AND user_id = ?").get(chatId.parse(id), userId) as Chat | undefined;
+      return db.prepare("SELECT id, category, title, created_at, updated_at FROM chats WHERE id = ? AND user_id = ?").get(chatId.parse(id), userId) as Chat | undefined;
     },
     deleteChat(id: string, confirmed: boolean) {
       const chat = this.getChat(id);
@@ -188,6 +208,7 @@ export function openStore(path: string) {
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(randomUUID(), id, file.name, file.mediaType, file.bytes.length, file.bytes, file.text, file.pages, file.preparationVersion);
           }
         }
+        db.prepare("UPDATE chats SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(parsed.chatId);
         db.exec("COMMIT");
         return this.getMessages(parsed.chatId).find(message => message.id === id)!;
       } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
@@ -347,7 +368,7 @@ export function openStore(path: string) {
     createChat(input: unknown): Chat {
       const { category, title } = chatInput.parse(input);
       const id = randomUUID();
-      db.prepare("INSERT INTO chats(id, user_id, category, title) VALUES (?, ?, ?, ?)").run(id, userId, category, title);
+      db.prepare("INSERT INTO chats(id, user_id, category, title, updated_at) VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))").run(id, userId, category, title);
       if (category === "build") db.prepare("INSERT INTO build_context(chat_id, settings) VALUES (?, ?)").run(id, JSON.stringify(defaultBuildSettings));
       return this.getChat(id)!;
     },

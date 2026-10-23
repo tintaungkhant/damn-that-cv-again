@@ -99,7 +99,7 @@ test("v2 migration, reopen, profile changes and chat deletion preserve independe
     store.changeCvRevision({ chatId: chat.id, revisionId: first.id, action: "accept", expectedAcceptedId: null });
     store.close();
     const fixture = new DatabaseSync(path);
-    fixture.exec("DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; DROP TABLE attachments; DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; PRAGMA user_version = 2;");
+    fixture.exec("DROP INDEX chats_user_updated; ALTER TABLE chats DROP COLUMN updated_at; DROP TABLE job_operations; DROP TABLE job_activity; DROP TABLE jobs; DROP TABLE attachments; DROP TABLE build_context; ALTER TABLE cv_revisions DROP COLUMN profile_revision; ALTER TABLE cv_revisions DROP COLUMN explanation; PRAGMA user_version = 2;");
     fixture.close();
     store = openStore(path);
     let workspace = store.getCvWorkspace(chat.id);
@@ -107,7 +107,7 @@ test("v2 migration, reopen, profile changes and chat deletion preserve independe
     assert.deepEqual(workspace.revisions[0].content, cv);
     assert.equal(workspace.settings.projectLimit, 5);
     store.updateBuildSettings(chat.id, { ...workspace.settings, jobDescription: "Queue engineer", projectLimit: 2 }, 0);
-    const profileChat = store.listChats().find(item => item.category === "profile")!;
+    const profileChat = store.listChats({}).items.find(item => item.category === "profile")!;
     const turn = store.beginTurn({ chatId: profileChat.id, content: "New wording" });
     store.completeTurn(turn.id, "Review", { baseRevision: profileRevision, summary: "Update", operations: [{ type: "replace", id: "p-role", content: "## Work\n\nSenior engineer building queues." }] });
     store.approveProfileProposal(store.getProfileProposals(profileChat.id)[0].id, profileRevision);

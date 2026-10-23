@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function ChatPage({ params }: PageProps<"/chats/[id]">) {
   return <Suspense fallback={<>
-    <PageHeader trail={[{ label: "Chats", href: "/" }, { label: "Loading…" }]} />
+    <PageHeader trail={[{ label: "Home", href: "/" }, { label: "Loading…" }]} />
     <div role="status" className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Spinner />Loading chat…</div>
   </>}>
     {params.then(({ id }) => <Chat id={id} />)}

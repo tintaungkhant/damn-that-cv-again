@@ -79,7 +79,7 @@ test("a CV uses its request's profile snapshot even if another chat updates the 
   const { store, chat } = setup();
   const original = store.getProfileRevisions()[0];
   const provider: ChatProvider = { async *stream() {
-    const profileChat = store.listChats().find(item => item.category === "profile")!;
+    const profileChat = store.listChats({}).items.find(item => item.category === "profile")!;
     const turn = store.beginTurn({ chatId: profileChat.id, content: "Remove obsolete work" });
     store.completeTurn(turn.id, "Review", { baseRevision: original.id, summary: "Remove", operations: [{ type: "delete", id: "p-work" }] });
     store.approveProfileProposal(store.getProfileProposals(profileChat.id)[0].id, original.id);

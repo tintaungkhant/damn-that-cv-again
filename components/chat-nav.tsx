@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import { DeleteChatDialog } from "@/components/chats/forms";
@@ -15,9 +15,13 @@ function NavButton({ href, tooltip, children, active }: NavLinkProps & { active:
   </SidebarMenuButton>;
 }
 function ActiveNavButton(props: NavLinkProps) {
-  return <NavButton {...props} active={usePathname() === props.href} />;
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const [path, query] = props.href.split("?");
+  const active = pathname === path && [...new URLSearchParams(query)].every(([key, value]) => search.get(key) === value);
+  return <NavButton {...props} active={active} />;
 }
-// usePathname suspends while prerendering dynamic chat routes, so the fallback is an inactive link.
+// usePathname and useSearchParams suspend while prerendering dynamic chat routes, so the fallback is an inactive link.
 export function NavLink(props: NavLinkProps) {
   return <Suspense fallback={<NavButton {...props} active={false} />}><ActiveNavButton {...props} /></Suspense>;
 }

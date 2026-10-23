@@ -71,3 +71,9 @@ Schema v5 adds independently owned jobs, append-only activity, and durable submi
 Creation records a full initial snapshot. Effective edits retain complete old/new values. Status plus comment commits as one event with the job version and submission key; failed writes roll back all three. Keys bind to the normalized operation payload and owner, so identical retries succeed without another event while mismatched reuse fails. Field no-ops record a submission key but no activity or version change. Comment-only writes preserve fields and increment the version. SQLite timestamps and integer event IDs give deterministic chronological activity; lists use updated timestamp and ID with 25-row pagination.
 
 Migration is additive and preserves v4 data. Older binaries reject v5. Rollback requires a pre-upgrade database copy and the prior binary; never lower the schema version on a database used by the new application.
+
+## Ticket 13 extension: bounded chat navigation
+
+Schema v6 adds `chats.updated_at` and an index on owner, category, update time, and ID. Creating a chat and saving a user message set it; migration backfills each chat from its latest message, or its creation time when it has none. SQLite cannot add a column with a non-constant default, so the column defaults to an empty string and the migration fills it in the same transaction. Chat lists order by update time then ID, search titles case-insensitively in SQL, and return at most 25 rows per page; the sidebar asks for five per category.
+
+Migration is additive and preserves v5 data. Older binaries reject v6. Rollback requires a pre-upgrade database copy and the prior binary.
