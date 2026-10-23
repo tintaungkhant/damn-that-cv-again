@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { profileProposal, emptyProfile, applyProfileOperations, canReapply, parseProfile, type SavedProposal, type ProfileRevision } from "./profile.ts";
 
 export const chatInput = z.object({
   category: z.enum(["profile", "build"]),
@@ -60,8 +61,27 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1) {
+    } else if (version !== 1 && version !== 2) {
       throw new Error("Database version is newer than this app supports.");
+    }
+    if (version === 0 || version === 1) {
+      db.exec(`
+        CREATE TABLE profile_proposals (
+          id TEXT PRIMARY KEY,
+          chat_id TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+          message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          value TEXT NOT NULL CHECK(json_valid(value)),
+          status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'superseded'))
+        );
+        CREATE INDEX profile_proposals_chat ON profile_proposals(chat_id);
+        CREATE TABLE profile_block_ids (id TEXT PRIMARY KEY);
+        PRAGMA user_version = 2;
+      `);
+      for (const row of db.prepare("SELECT markdown FROM profile_revisions").all()) {
+        for (const match of String(row.markdown).matchAll(/^<!-- id:(p-[a-z0-9-]{1,64}) -->/gm)) {
+          db.prepare("INSERT OR IGNORE INTO profile_block_ids(id) VALUES (?)").run(match[1]);
+        }
+      }
     }
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
@@ -119,13 +139,21 @@ export function openStore(path: string) {
     recoverInterruptedTurns() {
       db.prepare("UPDATE messages SET status = 'failed' WHERE status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").run(userId);
     },
-    completeTurn(id: string, content: string) {
+    completeTurn(id: string, content: string, proposal?: unknown) {
       const text = z.string().trim().min(1).parse(content);
       db.exec("BEGIN IMMEDIATE");
       try {
         const pending = db.prepare("SELECT chat_id FROM messages WHERE id = ? AND role = 'user' AND status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").get(chatId.parse(id), userId);
         if (!pending) throw new Error("This request is no longer active.");
         db.prepare("INSERT INTO messages(id, chat_id, role, content, status) VALUES (?, ?, 'assistant', ?, 'complete')").run(randomUUID(), pending.chat_id, text);
+        if (proposal !== undefined) {
+          const value = profileProposal.parse(proposal);
+          const base = value.baseRevision === null ? emptyProfile : this.getProfileRevisions().find(row => row.id === value.baseRevision)?.markdown;
+          if (!base) throw new Error("Proposal base revision not found.");
+          applyProfileOperations(base, value, new Set(db.prepare("SELECT id FROM profile_block_ids").all().map(row => String(row.id))));
+          db.prepare("UPDATE profile_proposals SET status = 'superseded' WHERE chat_id = ? AND status = 'pending'").run(pending.chat_id);
+          db.prepare("INSERT INTO profile_proposals(id, chat_id, message_id, value, status) VALUES (?, ?, ?, ?, 'pending')").run(randomUUID(), pending.chat_id, id, JSON.stringify(value));
+        }
         db.prepare("UPDATE messages SET status = 'complete' WHERE id = ?").run(id);
         db.exec("COMMIT");
       } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
@@ -133,8 +161,58 @@ export function openStore(path: string) {
     getCvRevisions(id: string) {
       return db.prepare("SELECT id, content, status FROM cv_revisions WHERE chat_id = ? AND chat_id IN (SELECT id FROM chats WHERE user_id = ?) ORDER BY created_at, id").all(chatId.parse(id), userId);
     },
-    getProfileRevisions() {
-      return db.prepare("SELECT id, markdown FROM profile_revisions WHERE user_id = ? ORDER BY created_at DESC, id DESC").all(userId);
+    getProfileRevisions(): ProfileRevision[] {
+      return db.prepare("SELECT id, markdown FROM profile_revisions WHERE user_id = ? ORDER BY rowid DESC").all(userId).map(row => ({ id: String(row.id), markdown: String(row.markdown) }));
+    },
+    getProfileProposals(id: string): SavedProposal[] {
+      if (!this.getChat(id)) throw new Error("Chat not found.");
+      return db.prepare("SELECT id, value, status FROM profile_proposals WHERE chat_id = ? ORDER BY rowid DESC").all(id).map(row => ({
+        id: String(row.id), value: profileProposal.parse(JSON.parse(String(row.value))), status: row.status as SavedProposal["status"],
+      }));
+    },
+    previewProfileProposal(id: string): { revisionId: string | null; before: string; after: string | null; conflict: boolean } {
+      const row = db.prepare("SELECT value FROM profile_proposals WHERE id = ? AND status = 'pending' AND chat_id IN (SELECT id FROM chats WHERE user_id = ?)").get(chatId.parse(id), userId);
+      if (!row) throw new Error("Pending proposal not found.");
+      const proposal = profileProposal.parse(JSON.parse(String(row.value)));
+      const revisions = this.getProfileRevisions();
+      const current = revisions[0];
+      const before = current?.markdown ?? emptyProfile;
+      const base = proposal.baseRevision === null ? emptyProfile : revisions.find(item => item.id === proposal.baseRevision)?.markdown;
+      const revisionId = current?.id ?? null;
+      if (!base || (revisionId !== proposal.baseRevision && !canReapply(base, before, proposal))) return { revisionId, before, after: null, conflict: true };
+      try {
+        const used = new Set(db.prepare("SELECT id FROM profile_block_ids").all().map(row => String(row.id)));
+        return { revisionId, before, after: applyProfileOperations(before, proposal, used), conflict: false };
+      } catch { return { revisionId, before, after: null, conflict: true }; }
+    },
+    approveProfileProposal(id: string, expectedRevision: string | null) {
+      z.string().min(1).nullable().parse(expectedRevision);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const preview = this.previewProfileProposal(id);
+        if (preview.conflict || preview.revisionId !== expectedRevision) {
+          db.exec("COMMIT");
+          return { approved: false, preview };
+        }
+        const revisionId = randomUUID();
+        db.prepare("INSERT INTO profile_revisions(id, user_id, markdown) VALUES (?, ?, ?)").run(revisionId, userId, preview.after!);
+        for (const block of parseProfile(preview.after!)) db.prepare("INSERT OR IGNORE INTO profile_block_ids(id) VALUES (?)").run(block.id);
+        db.prepare("UPDATE profile_proposals SET status = 'approved' WHERE id = ?").run(id);
+        db.exec("COMMIT");
+        return { approved: true, preview };
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
+    },
+    restoreProfileRevision(id: string, expectedRevision: string) {
+      z.string().min(1).parse(id); z.string().min(1).parse(expectedRevision);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const revisions = this.getProfileRevisions();
+        if (revisions[0]?.id !== expectedRevision) throw new Error("Profile changed. Review the latest revision before restoring.");
+        const target = revisions.find(row => row.id === id);
+        if (!target) throw new Error("Profile revision not found.");
+        db.prepare("INSERT INTO profile_revisions(id, user_id, markdown) VALUES (?, ?, ?)").run(randomUUID(), userId, target.markdown);
+        db.exec("COMMIT");
+      } catch (error) { if (db.isTransaction) db.exec("ROLLBACK"); throw error; }
     },
     createChat(input: unknown): Chat {
       const { category, title } = chatInput.parse(input);

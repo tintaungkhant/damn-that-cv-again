@@ -1,6 +1,6 @@
 # 04: Profile chats and proposals
 
-Status: needs-triage
+Status: claimed
 Blocked by: 03
 
 ## Goal
@@ -24,3 +24,5 @@ The shared career profile, edited only through approved proposals.
 - [ ] A disputed fact stays unchanged and appears under open questions.
 
 ## Comments
+
+- Storage slice: schema v2 adds durable pending proposals and a block-ID ledger. Approval is transactional, previews detect conflicting stale targets, and undo appends history. Storage behavior checks pass.

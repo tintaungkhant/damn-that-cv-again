@@ -34,7 +34,7 @@ Unresolved contradictions leave disputed facts unchanged and are recorded in the
 
 ### Profile format
 
-The profile is Markdown. Each entry (a role, project, education item, or similar unit) carries a stable block ID as an HTML comment, for example `<!-- id:p-042 -->`. Block IDs never change once assigned and are not reused after deletion.
+The profile is Markdown. Each entry (a role, project, education item, or similar unit) carries a stable block ID as an HTML comment, for example `<!-- id:p-042 -->`. Block IDs never change once assigned and are not reused after deletion. Undo appends a new revision containing a historical document; it does not erase history. A permanent ID ledger prevents new insert operations from reusing historical IDs.
 
 A profile proposal is a list of operations against a named base revision:
 
@@ -169,7 +169,7 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 
 - Resolved: the spike confirmed that the installed Agent SDK supports subscription login, partial-message streaming, in-process tools, and disabling built-in tools and local settings. See `.scratch/v1/spike/findings.md`.
 - Resolved: the installed Next.js/React transport returns a `ReadableStream` incrementally and releases the action queue before that stream closes. HTTP and installed-dispatcher probes are recorded in `.scratch/v1/streaming/findings.md`; browser checks are excluded by the testing rule.
-- Define the exact flexible CV schema and the profile proposal operation schema.
+- Define the exact flexible CV schema. Profile proposal operations are defined in `lib/storage/profile.ts`: a named base revision, summary, and strict replace/insert/delete operations. Inserts name a new ID and an `afterId` (null means first). The reserved `p-open-questions` block always holds `## Open questions`.
 - Resolved: Node `node:sqlite` with transactional `PRAGMA user_version` migrations; see `docs/adr/0001-local-sqlite.md`.
 - Choose the initial Claude model after the spike and a realistic-input trial (career profile, long conversation, CV export), evaluating relevance, output validity, latency, and reported usage.
 
