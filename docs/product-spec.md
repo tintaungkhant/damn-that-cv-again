@@ -1,6 +1,6 @@
 # Personal AI CV Builder
 
-Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Ticket 05 defines the approved CV contract. Ticket 06 implements saved job details, tailored CV drafts, explicit acceptance, discard, history, restoration, readable/JSON views, and selection notes. Ticket 07 adds validated copy/download JSON export for the current accepted CV. Ticket 08 is retired. Ticket 09 automated hardening and realistic-input trials are complete, with a fictional workspace ready for manual acceptance (docs/trial-guide.md).
+Status: Agreed product scope. The feasibility spike on Claude subscription authentication, streaming, and tool calls passed on 2026-10-23 (see `.scratch/v1/spike/findings.md`). Ticket 02 foundation is implemented: local SQLite storage, a seeded user, and chat create/open/delete on port 3800. Ticket 03 adds streaming chat, persistence, cancellation, and retry through the isolated Claude provider. Ticket 04 adds validated profile proposals, explicit whole-batch approval, shared profile history and undo, and stale-revision reconciliation. Ticket 05 defines the approved CV contract. Ticket 06 implements saved job details, tailored CV drafts, explicit acceptance, discard, history, restoration, readable/JSON views, and selection notes. Ticket 07 adds validated copy/download JSON export for the current accepted CV. Ticket 08 is retired. Ticket 09 automated hardening and realistic-input trials are complete, with a fictional workspace ready for manual acceptance (docs/trial-guide.md). On 2026-10-23 the user confirmed Tickets 01–09 are done; Ticket 08 remains intentionally retired.
 
 ## Purpose
 
@@ -139,7 +139,11 @@ Each user message makes one Agent SDK `query()` call:
 
 Retired from version one by the user on 2026-10-23 (Ticket 08, wontfix). CV JSON export remains supported. There is no built-in application backup or restore. A one-time local database archive for replacing development test data is maintenance, not a product feature.
 
-## Version-one exclusions
+## Next workspace increment (planned)
+
+On 2026-10-23 the user approved planning file attachments (PDF, DOCX, text, and images), a simple applied-job tracker with comments and change history, scalable chat navigation, and a collapsible/expandable right workspace panel. These features are not implemented yet. Detailed scope, defaults, acceptance, and delivery order: `.scratch/workspace-next/spec.md`; Tickets 10–14 in `.scratch/workspace-next/issues/`. This increment supersedes the original exclusions for document uploads and application tracking only. Job URLs are stored links, not URL imports or scraping.
+
+## Original version-one exclusions
 
 No application authentication, template generation, HTML/CSS CV rendering, PDF output, document uploads, URL imports, job scraping, application tracking, vector search, provider selection, provider switching, API-key authentication, or additional provider adapters. Image and document capabilities were discussed as provider capabilities, not approved scope additions.
 
@@ -176,5 +180,5 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 - Resolved: Node `node:sqlite` with transactional `PRAGMA user_version` migrations; see `docs/adr/0001-local-sqlite.md`.
 - Resolved: Ticket 09 pins `claude-sonnet-5-5` after a paired realistic-input Sonnet/Haiku trial covering a full fictional career, long conversation and CV export. Sonnet produced valid, relevant output with lower latency and fewer output tokens in this trial. Measurements, limitations and acceptance audit: `.scratch/v1/hardening/findings.md`.
 
-These details must preserve the agreed scope. No application implementation is included in this specification change.
+These details must preserve the agreed scope. No application implementation is included in this specification change. The planned workspace increment is specified separately above.
 

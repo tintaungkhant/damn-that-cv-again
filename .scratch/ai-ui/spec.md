@@ -7,3 +7,6 @@ Deliver a bounded, scrollable conversation with return-to-latest control, readab
 Ticket 02 moves the app to a Sidebar shell with separate Home, chat (`/chats/[id]`), and Career profile pages, and a resizable workspace beside chat. It adds Marker, Item confirmations, Context usage hover card, Code Block (fences, JSON, profile diffs), and Sonner toasts.
 
 Verification: typecheck, lint, existing behavior tests, and production build. User performs visual acceptance per `.ai/rules/testing.md`; see `issues/01-shadcn-conversation.md`, `issues/02-app-shell-and-ai-elements.md`, and README.md.
+
+
+Follow-up scope (2026-10-23): the original upload exclusion above applies to the delivered UI slice. Attachments are now planned in `.scratch/workspace-next/spec.md`, Tickets 10–11; Ticket 13 supersedes the unbounded sidebar and adds desktop workspace hide/show. These follow-up changes are not implemented yet.

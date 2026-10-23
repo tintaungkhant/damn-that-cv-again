@@ -33,6 +33,10 @@ SQLite initializes and seeds the stable local user on first use. Data lives in `
 Storage and migration decisions: `docs/adr/0001-local-sqlite.md`.
 Product scope: `docs/product-spec.md`. Tickets: `.scratch/v1/issues/`.
 
+## Planned workspace increment
+
+Attachments (PDF, DOCX, text, images), an applied-job tracker with activity history, bounded chat navigation, and workspace hide/show are specified but not implemented. See `.scratch/workspace-next/spec.md` and Tickets 10–14 in `.scratch/workspace-next/issues/`.
+
 ## Checks
 
 ```sh
@@ -68,7 +72,7 @@ Ticket 08 (in-app backup/restore) is retired. Ticket 09 pins `claude-sonnet-5-5`
 
 A complete fictional Alex Morgan workspace is installed for manual review: six chats, 61 messages, three profile revisions, four CV revisions, two accepted CVs, a shorter draft, discarded history, one pending profile proposal, and one deliberately failed message for retry. The user's previous test database was archived and verified before replacement with explicit authorization. The archive path is recorded locally in `data/trial-workspaces/install.json`; data and archives remain outside Git.
 
-Follow `docs/trial-guide.md` at http://localhost:3800. Trial measurements and the active acceptance audit are in `.scratch/v1/hardening/findings.md`. Automated checks pass; manual UI/editorial acceptance is still open. Initial discussion history is explicitly labeled synthetic; generated CVs and the pending profile proposal came from live Claude calls.
+Follow `docs/trial-guide.md` at http://localhost:3800. Trial measurements and the active acceptance audit are in `.scratch/v1/hardening/findings.md`. Automated checks pass; the user confirmed Tickets 01–09 complete on 2026-10-23. Initial discussion history is explicitly labeled synthetic; generated CVs and the pending profile proposal came from live Claude calls.
 
 
 ## AI conversation UI
