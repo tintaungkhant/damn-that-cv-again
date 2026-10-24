@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
-import { FileTextIcon, MessagesSquareIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
 import { formatDateTime } from "@/lib/utils";
 import { chatListInput } from "@/lib/storage/store";
 import { DeleteChatButton, NewChatDialog } from "@/components/chats/forms";
+import { chatCategories } from "@/components/chats/categories";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 type Query = Promise<Record<string, string | string[] | undefined>>;
-const labels = { build: "CV chats", profile: "Profile chats" };
 
 export default function ChatsPage({ searchParams }: { searchParams: Query }) {
   return <Suspense fallback={<><PageHeader trail={[{ label: "Home", href: "/" }, { label: "Chats" }]} /><Skeleton className="m-4 h-64" /></>}>
@@ -29,10 +29,10 @@ async function Chats({ searchParams }: { searchParams: Query }) {
   const query = await searchParams;
   const parsed = chatListInput.required({ category: true }).safeParse({ category: query.category, search: query.search ?? "", page: query.page === undefined ? 1 : Number(query.page) });
   if (!parsed.success) return <><PageHeader trail={[{ label: "Home", href: "/" }, { label: "Chats" }]} />
-    <p role="alert" className="p-4 sm:p-8">Invalid category, search, or page. Open <Link href="/chats?category=build" className="underline">CV chats</Link> or <Link href="/chats?category=profile" className="underline">Profile chats</Link>.</p></>;
+    <p role="alert" className="p-4 sm:p-8">Invalid category, search, or page. Open <Link href="/chats?category=build" className="underline">CV chats</Link> or <Link href="/chats?category=profile" className="underline">Profile chats</Link>, or <Link href="/chats?category=general" className="underline">General chats</Link>.</p></>;
   const filters = parsed.data;
   const result = getStore().listChats(filters);
-  const label = labels[filters.category];
+  const { label, icon: Icon } = chatCategories[filters.category];
   function pageHref(page: number) {
     return `/chats?${new URLSearchParams({ category: filters.category, search: filters.search, page: String(page) })}`;
   }
@@ -51,7 +51,7 @@ async function Chats({ searchParams }: { searchParams: Query }) {
         <p className="text-sm text-muted-foreground">{result.total} chats · Page {result.page} of {Math.max(1, Math.ceil(result.total / 25))}</p>
         {result.items.length === 0 && <Empty className="border"><EmptyHeader><EmptyTitle>No chats found</EmptyTitle></EmptyHeader></Empty>}
         {result.items.map(chat => <Item key={chat.id} variant="outline">
-          <ItemMedia variant="icon">{chat.category === "build" ? <FileTextIcon /> : <MessagesSquareIcon />}</ItemMedia>
+          <ItemMedia variant="icon"><Icon /></ItemMedia>
           <ItemContent>
             <ItemTitle><Link href={`/chats/${chat.id}`} className="underline">{chat.title}</Link></ItemTitle>
             <ItemDescription>Updated <time dateTime={chat.updated_at}>{formatDateTime(chat.updated_at)}</time></ItemDescription>

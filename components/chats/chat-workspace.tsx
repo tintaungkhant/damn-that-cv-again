@@ -16,6 +16,7 @@ import { selectionError } from "@/lib/attachments/types";
 import { readWorkspacePreference, workspacePreferenceKey, workspaceSize } from "@/lib/workspace-preference";
 import { CvAccepted, CvDraft, CvHistory, JobDetails, type CvWorkspace } from "./cv-review";
 import { ConfirmedProfile, ProfileHistory, ProfileProposals, type ProfileWorkspace } from "./profile-review";
+import { chatCategories } from "./categories";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -104,9 +105,12 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
   const sending = pending || documentBusy || !!storedPending;
   const pendingProposals = profile.proposals.filter(item => item.status === "pending");
   const draft = cv?.revisions.find(item => item.status === "draft");
+  const general = chat.category === "general";
   const suggestions = build
     ? ["Draft a CV for the saved job description.", "Explain which experience best matches this role."]
-    : ["Help me organize my career notes.", "What information is missing from my profile?"];
+    : general
+      ? ["Write a three-sentence summary of my career.", "Write a short cover letter for a freelance project.", "Help me draft a project proposal."]
+      : ["Help me organize my career notes.", "What information is missing from my profile?"];
 
   useEffect(() => {
     restored.current = false;
@@ -246,7 +250,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
         {messages.length === 0 && !pending ? <Empty className="h-full">
           <EmptyHeader>
             <EmptyMedia variant="icon"><SparklesIcon /></EmptyMedia>
-            <EmptyTitle>{build ? "Build your next CV" : "Start with your story"}</EmptyTitle>
+            <EmptyTitle>{build ? "Build your next CV" : general ? "Ask anything about your career" : "Start with your story"}</EmptyTitle>
           </EmptyHeader>
           {build && !cv?.settings.jobDescription && <EmptyContent><Button variant="outline" onClick={() => review("job")}>Add job description</Button></EmptyContent>}
         </Empty> : <MessageScroller>
@@ -301,7 +305,7 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
         <form ref={formRef} onSubmit={event => { event.preventDefault(); if (!composerDisabled && (content.trim() || files.length)) send(); }}>
           <InputGroup>
             <InputGroupTextarea ref={inputRef} aria-label="Message" value={content} onChange={event => setContent(event.target.value)} maxLength={100000} required={!files.length} disabled={!!composerDisabled}
-              placeholder={build ? "Ask for a draft, discuss selections, or request changes…" : "Tell me about your experience…"} className="max-h-48 min-h-16 p-3"
+              placeholder={build ? "Ask for a draft, discuss selections, or request changes…" : general ? "Ask for a summary, letter, proposal, or profile update…" : "Tell me about your experience…"} className="max-h-48 min-h-16 p-3"
               onKeyDown={event => {
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); formRef.current?.requestSubmit(); }
               }} />
@@ -323,9 +327,9 @@ export function ChatWorkspace({ chat, initialMessages, initialProfile, initialCv
 
   const status = pending ? <span role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner />Replying</span> : null;
   return <>
-    <PageHeader trail={[{ label: build ? "CV chats" : "Profile chats", href: `/chats?category=${chat.category}` }, { label: chat.title }]}>
+    <PageHeader trail={[{ label: chatCategories[chat.category].label, href: `/chats?category=${chat.category}` }, { label: chat.title }]}>
       {status}
-      <Badge variant="secondary" className="hidden sm:inline-flex">{build ? "Build CV" : "Profile"}</Badge>
+      <Badge variant="secondary" className="hidden sm:inline-flex">{chatCategories[chat.category].badge}</Badge>
       {!wide && <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}><PanelRightIcon />Workspace{attention.length > 0 && <Badge className="h-4 min-w-4 px-1">{attention.length}</Badge>}</Button>}
       {wide && <Button variant="outline" size="sm" aria-controls="chat-workspace" aria-expanded={workspaceOpen} onClick={() => workspaceOpen ? workspaceHandle?.collapse() : showWorkspace()}>
         {workspaceOpen ? <><PanelRightCloseIcon />Hide workspace</> : <><PanelRightOpenIcon />Show workspace{attention.length > 0 && <Badge className="h-4 min-w-4 px-1">{attention.length}</Badge>}</>}

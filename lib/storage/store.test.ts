@@ -101,12 +101,12 @@ test("a newer database version is refused without overwriting stored data", () =
   const chat = store.createChat({ category: "profile", title: "Preserve me" });
   store.close();
   const future = new DatabaseSync(path);
-  future.exec("PRAGMA user_version = 7");
+  future.exec("PRAGMA user_version = 8");
   future.close();
   try {
     assert.throws(() => openStore(path), /newer/);
     const fixture = new DatabaseSync(path);
-    fixture.exec("PRAGMA user_version = 6");
+    fixture.exec("PRAGMA user_version = 7");
     fixture.close();
     store = openStore(path);
     assert.equal(store.getChat(chat.id)?.title, "Preserve me");
@@ -169,5 +169,59 @@ test("v5 migration backfills chat activity from the latest message and keeps qui
       ["Active", "2022-01-01T00:00:00.000Z"], ["Quiet", "2021-01-01T00:00:00.000Z"],
     ]);
     assert.equal(store.getChat(quiet.id)?.title, "Quiet");
+  } finally { store.close(); rmSync(folder, { recursive: true, force: true }); }
+});
+
+test("general chats keep the profile approval flow without CV settings and delete without confirmation", () => {
+  const store = openStore(":memory:");
+  try {
+    const chat = store.createChat({ category: "general", title: "Project letter" });
+    assert.equal(store.listChats({ category: "general" }).total, 1);
+    assert.equal(store.listChats({ category: "profile" }).total, 0);
+    assert.throws(() => store.getCvWorkspace(chat.id), /Build chat not found/);
+    const turn = store.beginTurn({ chatId: chat.id, content: "I also led the Acme migration." });
+    store.completeTurn(turn.id, "Review this addition.", { baseRevision: null, summary: "Add Acme", operations: [{ type: "insert", id: "p-acme", afterId: null, content: "## Experience\n\nLed the Acme migration." }] });
+    const [proposal] = store.getProfileProposals(chat.id);
+    assert.deepEqual(store.getProfileRevisions(), []);
+    assert.equal(store.approveProfileProposal(proposal.id, null).approved, true);
+    store.deleteChat(chat.id, false);
+    assert.equal(store.getChat(chat.id), undefined);
+    assert.match(store.getProfileRevisions()[0].markdown, /Acme migration/);
+  } finally { store.close(); }
+});
+
+test("v6 migration rebuilds chats for general chats without losing or cascading saved data", () => {
+  const folder = mkdtempSync(join(tmpdir(), "cv-general-"));
+  const path = join(folder, "app.sqlite");
+  let store = openStore(path);
+  const build = store.createChat({ category: "build", title: "Platform role" });
+  const profile = store.createChat({ category: "profile", title: "Notes" });
+  const turn = store.beginTurn({ chatId: profile.id, content: "Notes", attachments: [{ name: "notes.txt", mediaType: "text/plain", bytes: new TextEncoder().encode("Engineer"), text: "Engineer", pages: 1, preparationVersion: 1 }] });
+  store.completeTurn(turn.id, "Review.", { baseRevision: null, summary: "Notes", operations: [{ type: "insert", id: "p-work", afterId: null, content: "## Work\n\nEngineer." }] });
+  store.approveProfileProposal(store.getProfileProposals(profile.id)[0].id, null);
+  store.updateBuildSettings(build.id, { jobDescription: "Run platforms", targetRole: "", targetCompany: "", projectLimit: 5 }, 0);
+  store.close();
+  const legacy = new DatabaseSync(path);
+  legacy.exec(`PRAGMA foreign_keys = OFF; BEGIN;
+    CREATE TABLE chats_v6 (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), category TEXT NOT NULL CHECK(category IN ('profile', 'build')),
+      title TEXT NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 120), created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), updated_at TEXT NOT NULL DEFAULT '');
+    INSERT INTO chats_v6 SELECT id, user_id, category, title, created_at, updated_at FROM chats;
+    DROP TABLE chats; ALTER TABLE chats_v6 RENAME TO chats;
+    CREATE INDEX chats_user ON chats(user_id, created_at); CREATE INDEX chats_user_updated ON chats(user_id, category, updated_at DESC, id DESC);
+    PRAGMA user_version = 6; COMMIT;`);
+  assert.throws(() => legacy.prepare("INSERT INTO chats(id, user_id, category, title) VALUES ('x', 'local-user', 'general', 'x')").run());
+  legacy.close();
+  store = openStore(path);
+  try {
+    assert.deepEqual(store.getMessages(profile.id).map(message => [message.content, message.attachments?.length]), [["Notes", 1], ["Review.", undefined]]);
+    assert.equal(store.getProfileProposals(profile.id)[0].status, "approved");
+    assert.equal(store.getCvWorkspace(build.id).settings.jobDescription, "Run platforms");
+    assert.equal(store.getProfileRevisions().length, 1);
+    const general = store.createChat({ category: "general", title: "Proposal" });
+    assert.equal(store.listChats({}).total, 3);
+    // Foreign keys are back on: deleting a chat still cascades to its messages.
+    store.deleteChat(profile.id, false);
+    assert.deepEqual(store.getMessages(profile.id), []);
+    assert.equal(store.getChat(general.id)?.category, "general");
   } finally { store.close(); rmSync(folder, { recursive: true, force: true }); }
 });

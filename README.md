@@ -19,7 +19,7 @@ Run only one app server against the database at a time. Keep the full checkout a
 
 ### Navigation
 
-The sidebar links to Home, **Career profile**, **CV chats**, **Profile chats**, and **Jobs**. Each chat category shows its five most recently active chats, then **View all**. The category pages (`/chats?category=build` and `/chats?category=profile`) search titles and show 25 chats per page. Create chats with **New chat**. Delete them from the sidebar (**⋯ → Delete chat**) or from a category page. Deletion asks for confirmation.
+The sidebar links to Home, **Career profile**, **CV chats**, **Profile chats**, **General chats**, and **Jobs**. Each chat category shows its five most recently active chats, then **View all**. The category pages (`/chats?category=build`, `/chats?category=profile`, and `/chats?category=general`) search titles and show 25 chats per page. Create chats with **New chat**. Delete them from the sidebar (**⋯ → Delete chat**) or from a category page. Deletion asks for confirmation.
 
 A chat page shows the conversation beside a resizable workspace panel. On wide screens, **Hide workspace** gives the conversation the full width, and **Show workspace** restores the last tab and width. Below 1024px the workspace opens as a sheet from **Workspace**.
 
@@ -31,9 +31,13 @@ Paste rough career notes. Claude proposes block-based edits to your one shared c
 
 In the workspace **Job** tab, save a job description, an optional target role and company, and a project limit (default five). Use **Prepare draft request**, then send the message. A completed CV saves as a draft. Review it as a readable CV or raw JSON, then accept or discard it. The accepted CV stays visible while you discuss new drafts. **History** restores any revision as a new draft that needs acceptance. Profile or job changes never rewrite saved CVs. CV chats can also propose new profile facts, which go through the same approval. Use **Copy JSON** or **Download JSON** under Accepted CV to export the accepted revision without internal evidence or selection notes. The CV format is described in `docs/cv-schema.md`.
 
+### General chats
+
+Use a general chat for career writing without a fixed job: a short career summary, a bio, a cover letter for a project, a project proposal, or general advice. Claude writes from your confirmed profile and what you say in the chat, and marks unknown details as placeholders like `[client name]`. Copy a reply with its copy button. When you mention new career facts or ask to update your profile, Claude proposes profile edits that you approve in the workspace, exactly as in profile chats.
+
 ### Attachments
 
-Both chat categories accept PDF (including scans), DOCX, UTF-8 TXT/MD, and PNG/JPEG/WebP files as context for Claude. Use **Attach files**, remove files before sending if needed, and send with or without text. Saved files show their name, type, size, and a download control. Reopening a chat or retrying a message reuses the saved files. DOCX is text only: embedded images and layout are not analyzed.
+All chat categories accept PDF (including scans), DOCX, UTF-8 TXT/MD, and PNG/JPEG/WebP files as context for Claude. Use **Attach files**, remove files before sending if needed, and send with or without text. Saved files show their name, type, size, and a download control. Reopening a chat or retrying a message reuses the saved files. DOCX is text only: embedded images and layout are not analyzed.
 
 Limits: five files per message, 10 MiB each, 20 MiB combined. Files that break a limit, or a chat whose history grows too large, are rejected with an error. Nothing is silently dropped or shortened. Deleting a chat deletes its files. Exact limits: `docs/attachment-checks.md`.
 

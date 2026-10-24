@@ -250,3 +250,24 @@ test("interrupting a staged proposal saves neither the proposal nor assistant te
     assert.equal(store.getMessages(chat.id)[0].status, "failed");
   } finally { store.close(); }
 });
+
+test("general chats get general writing instructions, no CV context, and can stage profile edits", async () => {
+  const store = openStore(":memory:");
+  const chat = store.createChat({ category: "general", title: "Bio" });
+  const provider: ChatProvider = { async *stream(request) {
+    assert.match(request.instructions, /general career chat/);
+    assert.doesNotMatch(request.instructions, /Build CV chat/);
+    assert.equal(request.build, undefined);
+    yield { type: "text-delta", text: "Here is your bio." };
+    yield { type: "proposal", kind: "profile", value: { baseRevision: null, summary: "Add role", operations: [{ type: "insert", id: "p-role", afterId: null, content: "## Work\n\nDesigner." }] } };
+    yield { type: "done" };
+  }};
+  try {
+    const reply = createChatService(store, provider).send({ chatId: chat.id, content: "Write a short bio. I am a designer." });
+    const reader = reply.stream.getReader();
+    while (!(await reader.read()).done) {}
+    assert.equal(store.getMessages(chat.id)[1].content, "Here is your bio.");
+    assert.equal(store.getProfileProposals(chat.id)[0].status, "pending");
+    assert.deepEqual(store.getProfileRevisions(), []);
+  } finally { store.close(); }
+});

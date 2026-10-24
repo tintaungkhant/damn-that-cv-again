@@ -11,7 +11,7 @@ import { cvSchema, exportCv } from "./cv.ts";
 import { migrateJobs, jobStore } from "./jobs.ts";
 
 export const chatInput = z.object({
-  category: z.enum(["profile", "build"]),
+  category: z.enum(["profile", "build", "general"]),
   title: z.string().trim().min(1).max(120),
 });
 export const chatListInput = z.object({
@@ -26,13 +26,15 @@ export const turnInput = z.union([
   z.object({ chatId: z.uuid(), content: z.string().trim().max(100_000), attachments: z.array(preparedAttachment).max(5).optional() }).strict().refine(input => input.content.length > 0 || !!input.attachments?.length, "Write a message or attach a file.").refine(input => (input.attachments ?? []).reduce((sum, file) => sum + file.bytes.length, 0) <= 20 * 1024 * 1024, "Combined files exceed 20 MiB."),
   z.object({ chatId: z.uuid(), retryId: z.uuid() }).strict(),
 ]);
-export type Chat = { id: string; category: "profile" | "build"; title: string; created_at: string; updated_at: string };
+export type ChatCategory = z.infer<typeof chatInput.shape.category>;
+export type Chat = { id: string; category: ChatCategory; title: string; created_at: string; updated_at: string };
 
 export function openStore(path: string) {
   mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
   try {
-    db.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
+    // Foreign keys stay off during migrations so rebuilding a parent table cannot cascade-delete its children.
+    db.exec("PRAGMA foreign_keys = OFF; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
     db.exec("BEGIN IMMEDIATE");
     const version = db.prepare("PRAGMA user_version").get()?.user_version;
     if (version === 0) {
@@ -72,7 +74,7 @@ export function openStore(path: string) {
         CREATE INDEX cv_revisions_chat ON cv_revisions(chat_id);
         PRAGMA user_version = 1;
       `);
-    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6) {
+    } else if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6 && version !== 7) {
       throw new Error("Database version is newer than this app supports.");
     }
     if (version === 0 || version === 1) {
@@ -136,8 +138,29 @@ export function openStore(path: string) {
         PRAGMA user_version = 6;
       `);
     }
+    if (Number(version) < 7) {
+      // SQLite cannot change a CHECK constraint in place, so rebuild chats with the same rows and IDs.
+      db.exec(`
+        CREATE TABLE chats_v7 (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          category TEXT NOT NULL CHECK(category IN ('profile', 'build', 'general')),
+          title TEXT NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 120),
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+          updated_at TEXT NOT NULL DEFAULT ''
+        );
+        INSERT INTO chats_v7(id, user_id, category, title, created_at, updated_at) SELECT id, user_id, category, title, created_at, updated_at FROM chats;
+        DROP TABLE chats;
+        ALTER TABLE chats_v7 RENAME TO chats;
+        CREATE INDEX chats_user ON chats(user_id, created_at);
+        CREATE INDEX chats_user_updated ON chats(user_id, category, updated_at DESC, id DESC);
+        PRAGMA user_version = 7;
+      `);
+      if (db.prepare("PRAGMA foreign_key_check").all().length) throw new Error("Chat migration would break saved references.");
+    }
     db.prepare("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)").run("local-user", "Local user");
     db.exec("COMMIT");
+    db.exec("PRAGMA foreign_keys = ON");
   } catch (error) {
     if (db.isTransaction) db.exec("ROLLBACK");
     db.close();

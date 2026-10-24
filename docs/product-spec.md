@@ -20,7 +20,7 @@ The application exports CV JSON. The user supplies that JSON to Claude externall
 
 ## Chats
 
-Allow unlimited chats in two categories, with no product-imposed chat count limit. Users can create, reopen, continue, and delete chats.
+Allow unlimited chats in three categories (profile, build CV, and general), with no product-imposed chat count limit. Users can create, reopen, continue, and delete chats.
 
 ### Profile chats
 
@@ -57,6 +57,10 @@ Ask about consequential gaps, but do not block a useful draft because optional i
 Save generated CV drafts automatically. Acceptance marks a revision ready for export. Keep the last accepted revision available while discussing a new proposal; discarding a proposal must not replace the accepted CV. Preserve revision history and allow restoration of an earlier version.
 
 Existing CV revisions remain unchanged when the profile changes. Refresh them only on request. Each revision records the profile snapshot it used. Restore appends a new draft copied from history and requires explicit acceptance; it never replaces the accepted CV automatically. Job settings use a version check, and CV mutations compare the accepted revision the user reviewed. Settings and CV mutations wait until active replies finish. Deleting a build chat removes its job details, messages, and CV revisions after confirmation.
+
+### General chats
+
+General chats handle career writing and questions that have no saved job description or target role: short career summaries, bios, cover letters for projects or clients, project proposals, and advice. The assistant uses the confirmed profile and facts stated in the chat, never invents facts, and marks unknown details as placeholders. Deliverables are reply text, not saved documents. General chats may propose profile edits through the same explicit approval flow; one-off writing details are not profile facts. Deleting a general chat keeps the confirmed profile. General chats show the same profile review panel as profile chats.
 
 ## Assistant behavior
 
@@ -166,7 +170,7 @@ No application authentication, template generation, HTML/CSS CV rendering, PDF o
 
 ## Acceptance conditions
 
-1. A seeded user can create multiple chats in either category and reopen them after restarting the app.
+1. A seeded user can create multiple chats in any category and reopen them after restarting the app.
 2. A profile proposal changes shared career notes only after approval, preserves history, and detects stale revisions.
 3. New messages use the latest confirmed profile without importing unrelated chat discussions.
 4. A build chat can tailor CV content to a pasted job description and explain its selections without fabricating facts.

@@ -22,7 +22,7 @@ export async function createChat(formData: FormData) {
 export async function deleteChat(formData: FormData) {
   const input = z.object({
     id: z.uuid(), confirmed: z.enum(["true", "false"]),
-    returnTo: z.enum(["/", "/chats?category=build", "/chats?category=profile"]).default("/"),
+    returnTo: z.enum(["/", "/chats?category=build", "/chats?category=profile", "/chats?category=general"]).default("/"),
   }).safeParse({
     id: formData.get("id"), confirmed: formData.get("confirmed"), returnTo: formData.get("returnTo") ?? undefined,
   });

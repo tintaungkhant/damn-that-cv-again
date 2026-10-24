@@ -1,6 +1,6 @@
 # Navigation and workspace checks
 
-Ticket 13 bounds chat navigation and adds desktop **Hide workspace** / **Show workspace** controls. Primary navigation is Home, Career profile, CV chats, Profile chats, and Jobs. The sidebar shows the five most recently active chats per category with **View all** links. `/chats?category=build` and `/chats?category=profile` list every chat with title search, create, open, delete, and 25-row pages.
+Ticket 13 bounds chat navigation and adds desktop **Hide workspace** / **Show workspace** controls. Primary navigation is Home, Career profile, CV chats, Profile chats, General chats, and Jobs. The sidebar shows the five most recently active chats per category with **View all** links. `/chats?category=build`, `/chats?category=profile`, and `/chats?category=general` list every chat with title search, create, open, delete, and 25-row pages.
 
 ## Automated evidence
 
@@ -12,7 +12,7 @@ Ticket 13 bounds chat navigation and adds desktop **Hide workspace** / **Show wo
 
 No agent browser or visual checks are allowed by `.ai/rules/testing.md`. Run `bun run dev` and open `http://localhost:3800`. Older-chat checks need more than 25 chats in one category.
 
-1. Collapse the sidebar to icons. Home, Career profile, CV chats, Profile chats, and Jobs stay reachable with tooltips. The current page's link is highlighted, including the matching chat category.
+1. Collapse the sidebar to icons. Home, Career profile, CV chats, Profile chats, General chats, and Jobs stay reachable with tooltips. The current page's link is highlighted, including the matching chat category.
 2. Expanded sidebar: each category shows at most five chats, newest activity first, then **View all (N)**. Send a message in an older chat; it moves to the top of its category.
 3. Open **CV chats** and **Profile chats**. Search for a title fragment of an old chat on a later page and open it. Its browser tab title and breadcrumb show the chat title; the breadcrumb links back to its category. Next/previous keep the search.
 4. Create a chat from a category page; it opens the new chat. Delete a chat from a category page; you return to that page. Delete the open chat from the sidebar; you return Home. Build chat deletion still warns about CV revisions.

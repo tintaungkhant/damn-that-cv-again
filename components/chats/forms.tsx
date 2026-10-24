@@ -13,11 +13,8 @@ import {
   AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
-type Category = "profile" | "build";
-const categories = {
-  profile: { title: "Career profile chat", description: "Turn rough notes into a confirmed, shared career profile." },
-  build: { title: "Build CV chat", description: "Tailor a CV to one job description." },
-};
+import type { ChatCategory as Category } from "@/lib/storage/store";
+import { chatCategories as categories } from "./categories";
 
 export function NewChatDialog({ category = "profile", children }: { category?: Category; children: React.ReactNode }) {
   const [state, action, pending] = useActionState(
@@ -35,7 +32,7 @@ export function NewChatDialog({ category = "profile", children }: { category?: C
           <FieldSet>
             <FieldLegend variant="label">Purpose</FieldLegend>
             <RadioGroup name="category" defaultValue={category} disabled={pending}>
-              {(["profile", "build"] as const).map(value => <FieldLabel key={value} htmlFor={`new-chat-${value}`}>
+              {(["profile", "build", "general"] as const).map(value => <FieldLabel key={value} htmlFor={`new-chat-${value}`}>
                 <Field orientation="horizontal">
                   <FieldContent>
                     <FieldTitle>{categories[value].title}</FieldTitle>

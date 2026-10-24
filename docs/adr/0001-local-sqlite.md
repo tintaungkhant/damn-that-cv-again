@@ -79,3 +79,9 @@ Schema v6 adds `chats.updated_at` and an index on owner, category, update time, 
 Migration is additive and preserves v5 data. Older binaries reject v6. Rollback requires a pre-upgrade database copy and the prior binary.
 
 Ticket 14 verified the chain end to end: a populated v3 database written by the pre-feature storage code migrates to v6 in the built app with messages, profile history, CVs, and build settings unchanged (`.scratch/workspace-next/acceptance/findings.md`).
+
+## General chat extension: third chat category
+
+Schema v7 allows a `general` chat category. SQLite cannot change a CHECK constraint in place, so the migration rebuilds `chats` with the same columns, rows, and IDs, then recreates its two indexes. Foreign keys are off while migrations run (they cannot be toggled inside a transaction), so dropping the old table does not cascade to messages, attachments, proposals, CV revisions, or build settings. `PRAGMA foreign_key_check` must pass before commit; foreign keys are turned back on after it. General chats have no build context.
+
+The rebuild preserves v6 data. Older binaries reject v7. Rollback requires a pre-upgrade database copy and the prior binary. Before this migration first ran on the owner's database, a copy was saved with `VACUUM INTO` to `data/archives/app-before-general-chat-2026-10-24.sqlite`, and the migration was run on another copy with every table compared row for row.

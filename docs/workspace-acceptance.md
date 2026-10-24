@@ -53,7 +53,7 @@ Use the synthetic workspace.
 3. Search `oldest` on each category page. The oldest chat is found and opens. Its tab title and breadcrumb show its name, and the breadcrumb returns to its category.
 4. Send a message in an older chat. It moves to the top of its sidebar category.
 5. Create a chat from a category page, then delete one there. You return to the same page. A CV chat deletion still warns about CV revisions.
-6. Collapse the sidebar. Home, Career profile, CV chats, Profile chats, and Jobs stay reachable as icons with tooltips.
+6. Collapse the sidebar. Home, Career profile, CV chats, Profile chats, General chats, and Jobs stay reachable as icons with tooltips.
 
 Narrow pass: open the sidebar sheet and check steps 1, 3, and 6.
 

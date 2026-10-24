@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
-import { ChevronRightIcon, FileTextIcon, UserRoundIcon } from "lucide-react";
+import { ChevronRightIcon, FileTextIcon, MessageCircleIcon, UserRoundIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
 import { NewChatDialog } from "@/components/chats/forms";
+import { chatCategories } from "@/components/chats/categories";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,15 @@ export default function Home() {
               <NewChatDialog category="build"><Button variant="outline">Start Build CV chat</Button></NewChatDialog>
             </CardFooter>
           </Card>
+          <Card className="sm:col-span-2">
+            <CardHeader>
+              <CardTitle>Ask anything about your career</CardTitle>
+              <CardAction><MessageCircleIcon className="size-5 text-muted-foreground" /></CardAction>
+            </CardHeader>
+            <CardFooter className="mt-auto">
+              <NewChatDialog category="general"><Button variant="outline">Start general chat</Button></NewChatDialog>
+            </CardFooter>
+          </Card>
         </div>
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-medium text-muted-foreground">Recent chats</h2>
@@ -59,15 +69,15 @@ async function RecentChats() {
     <EmptyHeader><EmptyTitle>No chats yet</EmptyTitle></EmptyHeader>
   </Empty>;
   return <ItemGroup>
-    {chats.map(chat => <Item key={chat.id} variant="outline" asChild>
+    {chats.map(chat => { const { badge, icon: Icon } = chatCategories[chat.category]; return <Item key={chat.id} variant="outline" asChild>
       <Link href={`/chats/${chat.id}`}>
-        <ItemMedia variant="icon">{chat.category === "build" ? <FileTextIcon /> : <UserRoundIcon />}</ItemMedia>
+        <ItemMedia variant="icon"><Icon /></ItemMedia>
         <ItemContent>
           <ItemTitle>{chat.title}</ItemTitle>
           <ItemDescription>Started {new Date(chat.created_at).toLocaleDateString("en", { dateStyle: "medium" })}</ItemDescription>
         </ItemContent>
-        <ItemActions><Badge variant="secondary">{chat.category === "build" ? "Build CV" : "Profile"}</Badge><ChevronRightIcon className="size-4" /></ItemActions>
+        <ItemActions><Badge variant="secondary">{badge}</Badge><ChevronRightIcon className="size-4" /></ItemActions>
       </Link>
-    </Item>)}
+    </Item>; })}
   </ItemGroup>;
 }

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { io } from "next/cache";
-import { BriefcaseBusinessIcon, FileTextIcon, HouseIcon, ListIcon, MessagesSquareIcon, PlusIcon, SparklesIcon, UserRoundIcon } from "lucide-react";
+import { BriefcaseBusinessIcon, FileTextIcon, HouseIcon, ListIcon, MessageCircleIcon, MessagesSquareIcon, PlusIcon, SparklesIcon, UserRoundIcon } from "lucide-react";
 import { getStore } from "@/lib/db";
 import { NewChatDialog } from "@/components/chats/forms";
+import { chatCategories } from "@/components/chats/categories";
 import { ChatNavItem, NavLink } from "@/components/chat-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -33,6 +34,7 @@ export function AppSidebar() {
           <SidebarMenuItem><NavLink href="/profile" tooltip="Career profile"><UserRoundIcon />Career profile</NavLink></SidebarMenuItem>
           <SidebarMenuItem><NavLink href="/chats?category=build" tooltip="CV chats"><FileTextIcon />CV chats</NavLink></SidebarMenuItem>
           <SidebarMenuItem><NavLink href="/chats?category=profile" tooltip="Profile chats"><MessagesSquareIcon />Profile chats</NavLink></SidebarMenuItem>
+          <SidebarMenuItem><NavLink href="/chats?category=general" tooltip="General chats"><MessageCircleIcon />General chats</NavLink></SidebarMenuItem>
           <SidebarMenuItem><NavLink href="/jobs" tooltip="Jobs"><BriefcaseBusinessIcon />Jobs</NavLink></SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
@@ -46,14 +48,15 @@ export function AppSidebar() {
 
 async function ChatGroups() {
   await io();
-  return (["build", "profile"] as const).map(category => {
+  return (["build", "profile", "general"] as const).map(category => {
     const chats = getStore().listChats({ category, limit: 5 });
+    const { label, title, icon: Icon } = chatCategories[category];
     return <SidebarGroup key={category} className="group-data-[collapsible=icon]:hidden">
-    <SidebarGroupLabel>{category === "build" ? "Recent CV chats" : "Recent profile chats"}</SidebarGroupLabel>
-    <NewChatDialog category={category}><SidebarGroupAction title={category === "build" ? "New Build CV chat" : "New profile chat"}><PlusIcon /><span className="sr-only">New chat</span></SidebarGroupAction></NewChatDialog>
+    <SidebarGroupLabel>Recent {label}</SidebarGroupLabel>
+    <NewChatDialog category={category}><SidebarGroupAction title={`New ${title}`}><PlusIcon /><span className="sr-only">New chat</span></SidebarGroupAction></NewChatDialog>
     <SidebarGroupContent>
       <SidebarMenu>
-        {chats.items.map(chat => <ChatNavItem key={chat.id} id={chat.id} title={chat.title} category={category} icon={category === "build" ? <FileTextIcon /> : <MessagesSquareIcon />} />)}
+        {chats.items.map(chat => <ChatNavItem key={chat.id} id={chat.id} title={chat.title} category={category} icon={<Icon />} />)}
         {chats.total === 0 && <li className="px-2 py-1 text-xs text-muted-foreground">No chats yet.</li>}
         {chats.total > 0 && <SidebarMenuItem><NavLink href={`/chats?category=${category}`} tooltip={`View all ${chats.total}`}><ListIcon /><span className="text-muted-foreground">View all ({chats.total})</span></NavLink></SidebarMenuItem>}
       </SidebarMenu>

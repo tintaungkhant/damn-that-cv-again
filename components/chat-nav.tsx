@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import { DeleteChatDialog } from "@/components/chats/forms";
+import type { ChatCategory } from "@/lib/storage/store";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
@@ -26,7 +27,7 @@ export function NavLink(props: NavLinkProps) {
   return <Suspense fallback={<NavButton {...props} active={false} />}><ActiveNavButton {...props} /></Suspense>;
 }
 
-export function ChatNavItem({ id, title, category, icon }: { id: string; title: string; category: "profile" | "build"; icon: React.ReactNode }) {
+export function ChatNavItem({ id, title, category, icon }: { id: string; title: string; category: ChatCategory; icon: React.ReactNode }) {
   const [deleting, setDeleting] = useState(false);
   return <SidebarMenuItem>
     <NavLink href={`/chats/${id}`} tooltip={title}>{icon}<span>{title}</span></NavLink>
