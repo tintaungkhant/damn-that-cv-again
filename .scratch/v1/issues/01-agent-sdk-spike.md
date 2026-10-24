@@ -12,6 +12,7 @@ A throwaway script outside the app, under `.scratch/v1/spike/`. It must:
 
 - Authenticate with the local Claude Code subscription login only, with no `ANTHROPIC_API_KEY` set.
 - Use a custom system prompt, with built-in tools disabled and local settings and `CLAUDE.md` not loaded.
+  - Later change (2026-10-24): the app now enables `WebSearch` and `WebFetch` only. See `docs/product-spec.md`.
 - Register one in-process tool with a zod schema and get the model to call it.
 - Stream text with partial messages enabled.
 - Report usage from the result message.

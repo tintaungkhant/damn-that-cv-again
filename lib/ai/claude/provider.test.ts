@@ -12,7 +12,7 @@ test("Claude adapter exposes subscription limits without leaking provider diagno
   const provider = createClaudeProvider(input => {
     assert.equal(input.options?.env?.ANTHROPIC_API_KEY, undefined);
     assert.equal(input.options?.env?.ANTHROPIC_AUTH_TOKEN, undefined);
-    assert.deepEqual(input.options?.tools, []);
+    assert.deepEqual(input.options?.tools, ["WebSearch", "WebFetch"]);
     assert.deepEqual(input.options?.settingSources, []);
     assert.equal(input.options?.persistSession, false);
     assert.deepEqual(input.options?.settings, { autoCompactEnabled: false });
@@ -48,7 +48,7 @@ test("Claude profile tool validates a whole batch and emits it only after succes
     async *[Symbol.asyncIterator](): AsyncGenerator<SDKMessage> {
       const server = input.options?.mcpServers?.profile;
       assert.ok(server && "instance" in server);
-      assert.deepEqual(input.options?.allowedTools, ["mcp__profile__propose_profile_edit"]);
+      assert.deepEqual(input.options?.allowedTools, ["WebSearch", "WebFetch", "mcp__profile__propose_profile_edit"]);
       const client = new Client({ name: "test", version: "1" });
       const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
       await server.instance.connect(serverTransport);

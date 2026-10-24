@@ -6,6 +6,8 @@ import { cvSchema, type Cv } from "../../storage/cv.ts";
 import { createSdkMcpServer, tool, query, type Query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { validateContext, ContextLimitError, type ChatEvent, type ChatProvider, type ProviderRequest } from "../provider.ts";
 
+// Each web call uses a turn, so the limits leave room for several before the final reply.
+const webTools = ["WebSearch", "WebFetch"];
 type RunQuery = (input: Parameters<typeof query>[0]) => Pick<Query, typeof Symbol.asyncIterator | "close">;
 function errorEvent(detail: string): ChatEvent {
   if (/rate.?limit|blocking_limit|credits_required/i.test(detail)) return { type: "error", code: "rate-limit", message: "Claude subscription limit reached. Wait for the limit to reset, then retry." };
@@ -75,9 +77,9 @@ export function createClaudeProvider(run: RunQuery = query, model = "claude-sonn
             prompt: promptFor(request),
             options: {
               systemPrompt: request.instructions, model,
-              tools: [], settingSources: [], settings: { autoCompactEnabled: false }, skills: [], title: "cv-chat",
-              strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: request.build ? ["mcp__profile__propose_profile_edit", "mcp__profile__propose_cv"] : ["mcp__profile__propose_profile_edit"],
-              includePartialMessages: true, persistSession: false, maxTurns: request.build ? 4 : 3,
+              tools: webTools, settingSources: [], settings: { autoCompactEnabled: false }, skills: [], title: "cv-chat",
+              strictMcpConfig: true, mcpServers: { profile: mcp }, allowedTools: [...webTools, ...(request.build ? ["mcp__profile__propose_profile_edit", "mcp__profile__propose_cv"] : ["mcp__profile__propose_profile_edit"])],
+              includePartialMessages: true, persistSession: false, maxTurns: request.build ? 10 : 9,
               cwd, env, abortController,
             },
           });
